@@ -1,0 +1,7 @@
+FROM grafana/k6:0.54.0
+
+WORKDIR /scripts
+
+COPY scripts/perf/ /scripts/perf/
+
+ENTRYPOINT ["k6"]

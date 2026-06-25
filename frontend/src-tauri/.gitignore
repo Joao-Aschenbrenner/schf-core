@@ -1,0 +1,11 @@
+# Generated
+/target/
+WixTools/
+
+# Dependencies
+/Cargo.lock
+
+# Build artifacts
+*.msi
+*.exe
+*.nsis

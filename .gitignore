@@ -1,0 +1,121 @@
+# ================================================
+# SCHF Core — .gitignore
+# ================================================
+
+# Laravel
+/backend/.env
+/backend/.env.*
+/backend/vendor/
+/backend/storage/
+/backend/bootstrap/cache/
+
+# React / Frontend
+/frontend/node_modules/
+/frontend/dist/
+/frontend/build/
+/frontend/.env
+/frontend/.env.*
+/frontend/coverage/
+
+# Docker
+infra/docker/.env
+infra/mysql/data/
+infra/redis/data/
+
+# Tauri / Rust
+/frontend/src-tauri/target/
+/frontend/src-tauri/Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+/storage/logs/
+/backend/storage/logs/
+
+# Backups
+backups/*.sql
+backups/*.tar.gz
+backups/*.zip
+/storage/app/backups/
+
+# Legacy
+legacy/raw/
+
+# Temp
+*.tmp
+*.bak
+*.cache
+
+# ================================================
+# Security — Sensitive Files (NEVER commit)
+# ================================================
+
+# Environment files
+.env
+.env.local
+.env.production
+*.pem
+*.key
+*.crt
+*.cer
+*.pfx
+
+# Credentials and secrets
+*.enc
+*.enc.enc
+login.json
+secrets.json
+credentials.json
+*.secret
+
+# Database files (legacy Firebird)
+*.FDB
+*.fdb
+*.FBK
+*.fbk
+*.GDB
+
+# Archives with data
+*.rar
+*.zip
+*.7z
+
+# Compiled / Binary
+*.exe
+*.dll
+*.so
+*.dylib
+*.o
+*.a
+
+# ================================================
+# Generated directories
+# ================================================
+
+/.phpstan/cache/
+/.phpunit.result.cache
+/coverage/
+/dist/
+/build/
+
+# ================================================
+# Documentation — Review before committing
+# ================================================
+
+# Exclude docs with sensitive data patterns
+# Run: grep -r "Santa Casa\|santacasa\|SYSDBA" docs/
+# before committing any documentation
+
+# ================================================

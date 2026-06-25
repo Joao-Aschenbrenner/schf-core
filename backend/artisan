@@ -1,0 +1,61 @@
+<?php
+
+define('LARAVEL_START', microtime(true));
+
+/*
+|--------------------------------------------------------------------------
+| Register The Auto Loader
+|--------------------------------------------------------------------------
+|
+| Composer provides a convenient, automatically generated class loader
+| for our application. We just need to utilize it! Require the
+| Composer autoloader so we can easily pull in our dependencies.
+|
+*/
+
+require __DIR__.'/vendor/autoload.php';
+
+/*
+|--------------------------------------------------------------------------
+| Run The Artisan Application
+|--------------------------------------------------------------------------
+|
+| When we run the console application from the CLI, the current working
+| directory must be the root of the Laravel project so the paths
+| resolve correctly.
+|
+*/
+
+$app = require_once __DIR__.'/bootstrap/app.php';
+
+/*
+|--------------------------------------------------------------------------
+| Kernel
+|--------------------------------------------------------------------------
+|
+| Resolve the console kernel from the service container and run the
+| artisan command.
+|
+*/
+
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+
+$status = $kernel->handle(
+    $input = new Symfony\Component\Console\Input\ArgvInput,
+    new Symfony\Component\Console\Output\ConsoleOutput
+);
+
+/*
+|--------------------------------------------------------------------------
+| Shutdown
+|--------------------------------------------------------------------------
+|
+| Once the artisan command has finished executing, we will fire off
+| the shutdown events so that any final work may be done by the
+| application before we shut down the process.
+|
+*/
+
+$kernel->terminate($input, $status);
+
+exit($status);

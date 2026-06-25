@@ -1,0 +1,30 @@
+﻿arameters:
+    paths:
+        - app
+    level: 8
+    tmpDir: .phpstan/cache
+    ignoreErrors:
+        -
+            identifier: missingType.iterableValue
+        -
+            identifier: missingType.generics
+        # Laravel Eloquent models - magic properties from $fillable/$casts
+        - '#Access to an undefined property App\\Models\\[A-Za-z]+::\$[a-z_]+#'
+        # Laravel Request magic properties
+        - '#Access to an undefined property Illuminate\\Http\\Request::\$[a-z_]+#'
+        # Sanctum token type checking (resolved by treatPhpDocTypesAsCertain)
+        # Laravel auth() helper
+        - '#Call to an undefined method Illuminate\\Contracts\\Auth\\Factory::(id|user)#'
+        # Model magic properties from $fillable
+        - '#Access to an undefined property Illuminate\\Database\\Eloquent\\Model::\$[a-z_]+#'
+        # Eloquent static methods (create, where, find, etc.)
+        - '#Call to an undefined static method App\\Models\\[A-Za-z]+::(create|where|whereIn|find|findOrFail|query)#'
+        # Spatie middleware not installed in dev
+        - '#Class Spatie\\Permission\\Middlewares\\[A-Za-z]+Middleware not found\.#'
+        # Laravel middleware classes
+        - '#Class App\\Http\\Middleware\\[A-Za-z]+ not found\.#'
+        # Collection map return types
+        - '#Return type of call to method Illuminate\\Database\\Eloquent\\Collection.*contains unresolvable type\.#'
+        # Offset always exists
+        - '#Offset [0-9]+ on array.*always exists and is not nullable\.#'
+    treatPhpDocTypesAsCertain: false
