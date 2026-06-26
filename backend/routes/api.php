@@ -12,6 +12,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\HealthPlanController;
 use App\Http\Controllers\NfeController;
+use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PayableController;
 use App\Http\Controllers\PreLaunchController;
 use App\Http\Controllers\RestoreController;
@@ -126,6 +127,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('suppliers', SupplierController::class);
     Route::get('suppliers/{supplier}/financial-summary', [SupplierController::class, 'financialSummary']);
+
+    Route::apiResource('organizations', OrganizationController::class);
+    Route::post('organizations/{organization}/deactivate', [OrganizationController::class, 'deactivate']);
+    Route::post('organizations/{organization}/activate', [OrganizationController::class, 'activate']);
+    Route::post('organizations/{organization}/set-primary', [OrganizationController::class, 'setPrimary']);
 
     Route::apiResource('health-plans', HealthPlanController::class);
     Route::post('health-plans/{healthPlan}/resource-plans', [HealthPlanController::class, 'addResourcePlan']);

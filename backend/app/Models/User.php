@@ -25,6 +25,7 @@ class User extends Authenticatable
         'is_system_admin',
         'master_token',
         'last_master_login',
+        'organization_id',
     ];
 
     protected $hidden = [
@@ -85,5 +86,10 @@ class User extends Authenticatable
             return false;
         }
         return Hash::check($token, $this->master_token);
+    }
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
     }
 }
