@@ -140,8 +140,15 @@ schf-core/
 | `APP_KEY` | Chave de criptografia Laravel | Gerar na instalaÃ§Ã£o |
 | `DB_PASSWORD` | Senha do banco | `change_me_in_production` |
 | `REDIS_PASSWORD` | Senha Redis | `change_me_in_production` |
-| `FEATURE_LEGACY_MODULE` | Habilita mÃ³dulo histÃ³rico | `false` |
+| `FEATURE_LEGACY_MODULE` | Habilita módulo histórico (Firebird) | `false` |
+| `FEATURE_MULTI_ORGANIZATION` | Habilita múltiplas organizações | `true` |
+| `FEATURE_SETUP_WIZARD` | Habilita wizard de configuração | `true` |
+| `FEATURE_AUTO_UPDATES` | Habilita updates automáticos | `false` |
+| `FEATURE_DESKTOP_APP` | Habilita recursos desktop (Tauri) | `false` |
+| `FEATURE_DEVELOPER_MODE` | Habilita modo desenvolvedor | `false` |
 | `APP_UPDATE_REPO` | Repo GitHub para updates | `ORG/schf-core` |
+
+Consulte [docs/FEATURE_FLAGS.md](docs/FEATURE_FLAGS.md) para detalhes.
 
 ## Desenvolvimento
 

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\FeatureFlagService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
@@ -14,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->singleton(FeatureFlagService::class);
     }
 
     public function boot(): void

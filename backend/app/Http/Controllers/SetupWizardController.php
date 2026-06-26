@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OrganizationCreated;
+use App\Events\UserCreated;
+use App\Events\UserAssignedRole;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -50,6 +53,8 @@ class SetupWizardController extends Controller
             'is_active' => true,
         ]);
 
+        event(new OrganizationCreated($org));
+
         return response()->json(['organization' => $org]);
     }
 
@@ -77,10 +82,13 @@ class SetupWizardController extends Controller
             'is_system_admin' => true,
         ]);
 
+        event(new UserCreated($user));
+
         // Atribuir role super_admin
         $superAdminRole = Role::where('name', 'super_admin')->first();
         if ($superAdminRole) {
             $user->assignRole('super_admin');
+            event(new UserAssignedRole($user, ['super_admin']));
         }
 
         // Gerar master token

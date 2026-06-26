@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-06-26
+
+### Added
+
+- Multi-organization architecture with Organization model, OrganizationService, OrganizationController, OrganizationPolicy
+- Setup Wizard with 3-step flow (create organization → create admin → complete)
+- Domain Events: OrganizationCreated, UserCreated, UserAssignedRole, OrganizationActivated
+- Feature Flags system with 6 configurable flags (legacy_module, multi_organization, setup_wizard, auto_updates, desktop_app, developer_mode)
+- FeatureFlagService singleton and `feature()` global helper
+- ExpenseCategory model with organization relationship and default seeding
+
+### Changed
+
+- SetupWizardController now dispatches events on organization/admin creation
+- OrganizationController now dispatches events on activate/deactivate
+- AppServiceProvider registers FeatureFlagService as singleton
+- composer.json autoload includes helpers.php
+
+### Security
+
+- 0 secrets/leaks maintained via gitleaks
+- All sensitive Santa Casa data moved to legacy-data/ (local only)
+
+### Infrastructure
+
+- NSIS installer with port checking and registry management
+- PowerShell install script with health checks
+- Docker Compose with proper health dependencies
+
 ## [0.2.0] - 2026-06-13
 
 ### Added
