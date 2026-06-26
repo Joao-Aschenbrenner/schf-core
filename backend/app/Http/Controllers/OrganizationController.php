@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OrganizationActivated;
+use App\Events\OrganizationCreated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreOrganizationRequest;
 use App\Http\Requests\UpdateOrganizationRequest;
@@ -26,6 +28,8 @@ class OrganizationController extends Controller
     public function store(StoreOrganizationRequest $request): JsonResponse
     {
         $organization = $this->service->create($request->validated());
+
+        event(new OrganizationCreated($organization));
 
         return response()->json($organization, 201);
     }
@@ -57,6 +61,8 @@ class OrganizationController extends Controller
 
         $organization = $this->service->deactivate($organization, request('reason'));
 
+        event(new OrganizationActivated($organization, false, request('reason')));
+
         return response()->json($organization);
     }
 
@@ -65,6 +71,8 @@ class OrganizationController extends Controller
         $this->authorize('activate', $organization);
 
         $organization = $this->service->activate($organization);
+
+        event(new OrganizationActivated($organization, true));
 
         return response()->json($organization);
     }
