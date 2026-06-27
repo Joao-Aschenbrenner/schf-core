@@ -63,7 +63,7 @@ All notable changes for v1.1.0
 
 ### Security
 
-- All sensitive Santa Casa data moved to `legacy-data/` (local only, not versioned)
+- All sensitive legacy client data moved to dedicated storage (local only, not versioned)
 - Public repository (schf-core) contains no real hospital data
 - Private repository (schf-santacasa-migration) uses generic naming
 - Gitleaks scanning in CI/CD pipeline

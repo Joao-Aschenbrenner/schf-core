@@ -103,7 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 - 0 secrets/leaks maintained via gitleaks
-- All sensitive Santa Casa data moved to legacy-data/ (local only)
+- All sensitive legacy client data moved to dedicated storage (local only)
 
 ### Infrastructure
 
