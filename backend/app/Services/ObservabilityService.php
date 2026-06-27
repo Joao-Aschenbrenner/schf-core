@@ -58,6 +58,13 @@ class ObservabilityService
 
     protected function checkRedis(): array
     {
+        if (!extension_loaded('redis') && !class_exists(\Redis::class)) {
+            return [
+                'healthy' => false,
+                'error' => 'Extensão Redis não disponível',
+            ];
+        }
+
         try {
             $start = microtime(true);
             Redis::ping();
@@ -109,6 +116,13 @@ class ObservabilityService
 
     protected function checkQueue(): array
     {
+        if (!extension_loaded('redis') && !class_exists(\Redis::class)) {
+            return [
+                'healthy' => false,
+                'error' => 'Extensão Redis não disponível',
+            ];
+        }
+
         try {
             $size = Redis::llen('queues:default');
             return [

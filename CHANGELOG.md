@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-06-26
+
+### Added
+
+#### Integration & Quality
+- All v1.2.0 services registered as singletons in AppServiceProvider
+- 11 new unit test files covering all v1.2.0 modules
+- CI/CD pipeline (`.github/workflows/ci.yml`) with lint, tests, security scan, Docker build, smoke test
+- API documentation endpoint at `/api/docs` serving OpenAPI 3.0.3 JSON
+- ApiDocsController for serving the API documentation
+- Comprehensive validation guide (CHANGELOG_v1.3.0.md)
+
+#### Tests
+- FeatureFlagServiceTest: flag enable/disable, all flags, configured check
+- VersionCheckerTest: semver validation, compatibility, version comparison
+- SignatureValidatorTest: SHA256 compute/verify, key presence check
+- AuditServiceTest: log, login, logout, password change, role, organization, backup, system events
+- ObservabilityServiceTest: health check structure, database/redis/storage checks, metrics
+- ReleaseDownloaderTest: download, versions, cleanup, assets
+- UpdateServiceTest: check, versions, history, changelog
+- PluginLoaderTest: available plugins, load, load all, connector
+- MigrationManifestTest: from package, validation, target model, field map
+- ValidationEngineTest: valid data, required fields, type checking, max length, pattern, enum, CNPJ, CPF, CSV file
+- MigrationCompatibilityCheckerTest: compatible range, below min, above max
+
 ## [1.2.0] - 2026-06-26
 
 ### Added
