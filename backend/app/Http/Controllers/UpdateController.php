@@ -16,64 +16,60 @@ class UpdateController extends Controller
 
     public function check()
     {
-        $currentVersion = $this->getCurrentVersion();
-        $latestRelease = $this->updateService->fetchLatestRelease();
+        $result = $this->updateService->check();
+        return response()->json($result);
+    }
 
-        if (!$latestRelease) {
-            return response()->json([
-                'current_version' => $currentVersion,
-                'latest_version' => null,
-                'update_available' => false,
-                'message' => 'Não foi possível verificar atualizações',
-            ]);
-        }
+    public function checkVersion(string $version)
+    {
+        $result = $this->updateService->checkSpecific($version);
+        return response()->json($result);
+    }
 
-        $updateAvailable = version_compare($currentVersion, $latestRelease['tag_name'], '<');
+    public function versions()
+    {
+        $versions = $this->updateService->versions();
+        return response()->json(['versions' => $versions]);
+    }
 
-        return response()->json([
-            'current_version' => $currentVersion,
-            'latest_version' => $latestRelease['tag_name'],
-            'update_available' => $updateAvailable,
-            'release_notes' => $latestRelease['body'] ?? '',
-            'published_at' => $latestRelease['published_at'] ?? null,
-            'html_url' => $latestRelease['html_url'] ?? null,
-        ]);
+    public function download(string $version)
+    {
+        $result = $this->updateService->download($version);
+        return response()->json($result);
+    }
+
+    public function verify(string $version)
+    {
+        $result = $this->updateService->verify($version);
+        return response()->json($result);
     }
 
     public function run(Request $request)
     {
         $targetVersion = $request->input('version');
-
         $result = $this->updateService->runUpdate($targetVersion);
-
         return response()->json($result);
     }
 
     public function rollback()
     {
         $result = $this->updateService->rollback();
-
         return response()->json($result);
     }
 
     public function changelog()
     {
-        $currentVersion = $this->getCurrentVersion();
+        $currentVersion = app(\App\Services\VersionChecker::class)->getCurrentVersion();
         $changelog = $this->updateService->getChangelog($currentVersion);
-
         return response()->json([
             'current_version' => $currentVersion,
             'changelog' => $changelog,
         ]);
     }
 
-    private function getCurrentVersion(): string
+    public function history()
     {
-        $composerPath = base_path('composer.json');
-        if (file_exists($composerPath)) {
-            $composer = json_decode(file_get_contents($composerPath), true);
-            return $composer['version'] ?? '0.0.0';
-        }
-        return '0.0.0';
+        $history = $this->updateService->history();
+        return response()->json(['history' => $history]);
     }
 }

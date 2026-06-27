@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-06-26
+
+### Added
+
+#### Update Framework
+- VersionChecker: semver validation, compatibility checking, version listing
+- ReleaseDownloader: asset download with SHA256 integrity, version cleanup
+- SignatureValidator: checksum verification, release integrity validation
+- UpdateHistory model with status lifecycle (pending/running/success/failed/rolled_back)
+- New endpoints: check/{version}, versions, download/{version}, verify/{version}, history
+
+#### Desktop Installer
+- NSIS installer with silent install (/S), repair, update support
+- Auto-detect existing installation
+- Desktop and docs shortcuts
+- Component selection page, license page
+- update.ps1 for in-place updates
+
+#### Migration Framework
+- MigrationManifest: package format definition
+- CompatibilityChecker: Core version range validation
+- ValidationEngine: field type/pattern/unique validation, CNPJ/CPF support
+- ImportEngine: CSV/JSON parsing, field mapping, transformations, upsert
+- MigrationReport: step tracking, Markdown/JSON output
+- MigrationRunner: orchestrator (manifest→compatibility→validation→import)
+
+#### Plugin System
+- PluginInterface: contract for all plugins
+- ConnectorInterface: extends PluginInterface for database connectors
+- BasePlugin: abstract base with state management
+- BaseConnector: abstract connector with connect/disconnect
+- PluginLoader: discovers, registers, loads plugins
+- FirebirdConnectorPlugin: Firebird PDO connector
+
+#### Queue System
+- BaseJob: abstract base with history tracking, retry, timeout
+- MigrationJob: runs MigrationRunner for package import
+- ImportJob: imports data files via ImportEngine
+- BackupJob: creates MySQL dumps via docker exec
+- SyncJob: synchronizes data from external sources
+- ReportJob: generates supplier, category, cash flow reports
+
+#### Auditoria
+- AuditService: structured audit logs (login, logout, password, roles, exports, backups)
+
+#### Observabilidade
+- ObservabilityService: health checks (DB, Redis, Docker, Storage, Queue)
+- System and application metrics
+
+#### API Pública
+- ApiDocumentationService: OpenAPI 3.0.3 spec generation
+
 ## [1.1.0] - 2026-06-26
 
 ### Added
