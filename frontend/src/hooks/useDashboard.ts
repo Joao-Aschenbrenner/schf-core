@@ -8,3 +8,11 @@ export function useDashboardSummary() {
     refetchInterval: 30000,
   })
 }
+
+export function useDashboardOperational() {
+  return useQuery({
+    queryKey: ['dashboard', 'operational'],
+    queryFn: () => dashboardService.getOperational(),
+    refetchInterval: 30000,
+  })
+}

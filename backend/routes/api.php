@@ -133,6 +133,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/revoke-tokens', [AuthController::class, 'revokeTokens']);
 
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
+    Route::get('/dashboard/operational', [DashboardController::class, 'operational']);
 
     Route::apiResource('suppliers', SupplierController::class);
     Route::get('suppliers/{supplier}/financial-summary', [SupplierController::class, 'financialSummary']);
