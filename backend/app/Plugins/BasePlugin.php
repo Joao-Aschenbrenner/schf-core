@@ -94,7 +94,10 @@ abstract class BasePlugin implements PluginInterface
 
     protected function resolvePluginDir(): string
     {
-        return plugin_path($this->getName());
+        if (function_exists('plugin_path')) {
+            return plugin_path($this->getName());
+        }
+        return storage_path('app/plugins/' . $this->getName());
     }
 
     protected function loadState(): bool

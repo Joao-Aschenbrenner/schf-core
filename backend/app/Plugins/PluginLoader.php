@@ -18,8 +18,11 @@ class PluginLoader
     {
         $pluginDirs = [
             app_path('Plugins/Connectors'),
-            plugin_path(''),
         ];
+
+        if (function_exists('plugin_path')) {
+            $pluginDirs[] = plugin_path('');
+        }
 
         foreach ($pluginDirs as $dir) {
             if (!is_dir($dir)) continue;

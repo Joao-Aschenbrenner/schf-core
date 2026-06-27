@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ApiDocsController;
 use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BackupController;
@@ -32,9 +33,11 @@ Route::get('/health', function () {
     return response()->json([
         'status' => 'ok',
         'system' => 'SCHF',
-        'version' => '0.2.0',
+        'version' => config('app.version', '1.2.0'),
     ]);
 });
+
+Route::get('/docs', ApiDocsController::class)->name('api.docs');
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 
