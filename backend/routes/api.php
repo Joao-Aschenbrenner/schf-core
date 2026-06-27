@@ -72,7 +72,12 @@ Route::prefix('admin')->group(function () {
 
             // Updates
             Route::get('/updates/check', [UpdateController::class, 'check']);
+            Route::get('/updates/check/{version}', [UpdateController::class, 'checkVersion']);
+            Route::get('/updates/versions', [UpdateController::class, 'versions']);
             Route::get('/updates/changelog', [UpdateController::class, 'changelog']);
+            Route::get('/updates/history', [UpdateController::class, 'history']);
+            Route::post('/updates/download/{version}', [UpdateController::class, 'download']);
+            Route::post('/updates/verify/{version}', [UpdateController::class, 'verify']);
             Route::post('/updates/run', [UpdateController::class, 'run']);
             Route::post('/updates/rollback', [UpdateController::class, 'rollback']);
 

@@ -2,118 +2,168 @@
 
 namespace App\Services;
 
+use App\Models\UpdateHistory;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 
 class UpdateService
 {
-    protected string $repo = 'ORG/schf-core';
+    protected string $repo;
     protected string $githubApi = 'https://api.github.com';
 
-    public function __construct()
-    {
+    protected VersionChecker $versionChecker;
+    protected ReleaseDownloader $downloader;
+    protected SignatureValidator $validator;
+
+    public function __construct(
+        VersionChecker $versionChecker,
+        ReleaseDownloader $downloader,
+        SignatureValidator $validator
+    ) {
         $this->repo = config('app.update_repo', 'ORG/schf-core');
+        $this->versionChecker = $versionChecker;
+        $this->downloader = $downloader;
+        $this->validator = $validator;
     }
 
-    public function fetchLatestRelease(): ?array
+    public function check(): array
     {
-        try {
-            $response = Http::timeout(10)
-                ->accept('application/vnd.github.v3+json')
-                ->get("{$this->githubApi}/repos/{$this->repo}/releases/latest");
+        return $this->versionChecker->checkLatest();
+    }
 
-            if ($response->successful()) {
-                return $response->json();
-            }
+    public function checkSpecific(string $version): array
+    {
+        return $this->versionChecker->checkSpecific($version);
+    }
 
-            Log::warning('Falha ao buscar release mais recente', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Erro ao buscar release', ['error' => $e->getMessage()]);
-        }
+    public function versions(): array
+    {
+        return $this->versionChecker->listAvailableVersions();
+    }
 
-        return null;
+    public function download(string $version): array
+    {
+        return $this->downloader->downloadRelease($version);
+    }
+
+    public function verify(string $version): array
+    {
+        return $this->validator->verifyAllReleaseAssets($version);
     }
 
     public function runUpdate(?string $targetVersion = null): array
     {
-        $startTime = microtime(true);
+        $currentVersion = $this->versionChecker->getCurrentVersion();
 
-        try {
-            // 1. Verificar release alvo
-            $release = $targetVersion
-                ? $this->fetchSpecificRelease($targetVersion)
-                : $this->fetchLatestRelease();
+        $check = $targetVersion
+            ? $this->versionChecker->checkSpecific($targetVersion)
+            : $this->versionChecker->checkLatest();
 
-            if (!$release) {
-                return ['success' => false, 'message' => 'Release não encontrado'];
-            }
-
-            $version = $release['tag_name'];
-
-            // 2. Backup do banco antes da atualização
-            $this->backupDatabase();
-
-            // 3. Pull das novas imagens Docker
-            $pullResult = $this->pullImages($version);
-            if (!$pullResult['success']) {
-                return $pullResult;
-            }
-
-            // 4. Rodar migrations
-            $migrateResult = $this->runMigrations();
-            if (!$migrateResult['success']) {
-                $this->rollbackImages();
-                return $migrateResult;
-            }
-
-            // 5. Health check pós-atualização
-            $healthResult = $this->healthCheck();
-            if (!$healthResult['success']) {
-                $this->rollbackImages();
-                $this->rollbackMigrations();
-                return $healthResult;
-            }
-
-            // 6. Limpar cache
-            $this->clearCache();
-
-            $duration = round(microtime(true) - $startTime, 2);
-
-            return [
-                'success' => true,
-                'version' => $version,
-                'duration' => $duration,
-                'message' => "Atualização para {$version} concluída com sucesso",
-            ];
-        } catch (\Exception $e) {
-            Log::error('Erro durante atualização', ['error' => $e->getMessage()]);
-            return ['success' => false, 'message' => 'Erro interno: ' . $e->getMessage()];
+        if ($check['error'] ?? true) {
+            return ['success' => false, 'message' => $check['message'] ?? 'Erro ao verificar atualização'];
         }
+
+        if (!($check['update_available'] ?? false)) {
+            return ['success' => false, 'message' => 'Nenhuma atualização disponível'];
+        }
+
+        $version = $targetVersion ?? $check['latest_version'];
+
+        $history = UpdateHistory::create([
+            'from_version' => $currentVersion,
+            'to_version' => $version,
+            'status' => 'pending',
+            'method' => 'docker_pull',
+            'started_at' => now(),
+        ]);
+
+        $history->markRunning();
+
+        $downloadResult = $this->downloader->downloadRelease($version);
+        if (!$downloadResult['success']) {
+            $history->markFailed($downloadResult['message']);
+            return ['success' => false, 'message' => 'Falha no download: ' . $downloadResult['message']];
+        }
+
+        $verifyResult = $this->validator->verifyAllReleaseAssets($version);
+        if (!$verifyResult['verified']) {
+            $history->markFailed('Verificação de integridade falhou', $verifyResult);
+            return ['success' => false, 'message' => 'Verificação de integridade falhou', 'details' => $verifyResult];
+        }
+
+        $this->backupDatabase();
+
+        $pullResult = $this->pullImages($version);
+        if (!$pullResult['success']) {
+            $history->markFailed($pullResult['message']);
+            return $pullResult;
+        }
+
+        $migrateResult = $this->runMigrations();
+        if (!$migrateResult['success']) {
+            $this->rollbackImages();
+            $history->markFailed($migrateResult['message']);
+            return $migrateResult;
+        }
+
+        $healthResult = $this->healthCheck();
+        if (!$healthResult['success']) {
+            $this->rollbackImages();
+            $this->rollbackMigrations();
+            $history->markFailed('Health check pós-atualização falhou');
+            return $healthResult;
+        }
+
+        $this->clearCache();
+        $history->markSuccess(['verified' => true]);
+
+        return [
+            'success' => true,
+            'version' => $version,
+            'duration' => $history->duration_seconds,
+            'history_id' => $history->id,
+            'message' => "Atualização para {$version} concluída com sucesso",
+        ];
     }
 
     public function rollback(): array
     {
-        try {
-            // Rollback das imagens (usar tag anterior)
-            $this->rollbackImages();
-
-            // Rollback das migrations (última batch)
-            $this->rollbackMigrations();
-
-            // Health check
-            $health = $this->healthCheck();
-
-            return [
-                'success' => $health['success'],
-                'message' => $health['success'] ? 'Rollback concluído' : 'Rollback falhou no health check',
-            ];
-        } catch (\Exception $e) {
-            return ['success' => false, 'message' => 'Erro no rollback: ' . $e->getMessage()];
+        $lastSuccessful = UpdateHistory::getLastSuccessful();
+        if (!$lastSuccessful) {
+            return ['success' => false, 'message' => 'Nenhuma atualização bem-sucedida encontrada'];
         }
+
+        $currentVersion = $this->versionChecker->getCurrentVersion();
+        $targetVersion = $lastSuccessful->from_version;
+
+        $history = UpdateHistory::create([
+            'from_version' => $currentVersion,
+            'to_version' => $targetVersion,
+            'status' => 'pending',
+            'method' => 'rollback',
+            'started_at' => now(),
+        ]);
+
+        $history->markRunning();
+
+        $this->rollbackImages();
+        $this->rollbackMigrations();
+
+        $health = $this->healthCheck();
+
+        if ($health['success']) {
+            $history->markRolledBack($targetVersion);
+            return [
+                'success' => true,
+                'version' => $targetVersion,
+                'history_id' => $history->id,
+                'message' => "Rollback para {$targetVersion} concluído",
+            ];
+        }
+
+        $history->markFailed('Health check pós-rollback falhou');
+        return ['success' => false, 'message' => 'Rollback falhou no health check'];
     }
 
     public function getChangelog(string $currentVersion): string
@@ -144,30 +194,20 @@ class UpdateService
         return 'Erro ao buscar changelog';
     }
 
-    protected function fetchSpecificRelease(string $version): ?array
+    public function history(int $limit = 20): array
     {
-        try {
-            $response = Http::timeout(10)
-                ->accept('application/vnd.github.v3+json')
-                ->get("{$this->githubApi}/repos/{$this->repo}/releases/tags/{$version}");
-
-            if ($response->successful()) {
-                return $response->json();
-            }
-        } catch (\Exception $e) {
-            Log::error('Erro ao buscar release específica', ['error' => $e->getMessage()]);
-        }
-        return null;
+        return UpdateHistory::orderByDesc('created_at')
+            ->limit($limit)
+            ->get()
+            ->toArray();
     }
 
     protected function pullImages(string $version): array
     {
         try {
-            // Atualizar docker-compose com nova tag
             $composePath = base_path('docker-compose.yml');
             $compose = file_get_contents($composePath);
 
-            // Substituir tags das imagens
             $images = ['backend', 'frontend', 'nginx', 'queue'];
             foreach ($images as $img) {
                 $compose = preg_replace(
@@ -179,13 +219,11 @@ class UpdateService
 
             file_put_contents($composePath, $compose);
 
-            // Pull
             $result = Process::run('docker compose pull', base_path());
             if ($result->failed()) {
                 return ['success' => false, 'message' => 'Falha no docker compose pull: ' . $result->errorOutput()];
             }
 
-            // Restart containers
             $result = Process::run('docker compose up -d', base_path());
             if ($result->failed()) {
                 return ['success' => false, 'message' => 'Falha ao reiniciar containers: ' . $result->errorOutput()];
