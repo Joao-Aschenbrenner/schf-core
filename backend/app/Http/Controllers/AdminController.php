@@ -70,17 +70,18 @@ class AdminController extends Controller
 
     public function dashboard(): JsonResponse
     {
+        $legacyTables = ['historico_fornecedores', 'historico_notas', 'historico_operacoes_banco', 'historico_baixas_perdidas', 'historico_caixa', 'historico_usuarios', 'historico_contas', 'historico_convenios'];
+        $database = [];
+        foreach ($legacyTables as $table) {
+            try {
+                $database[str_replace('historico_', '', $table)] = DB::table($table)->count();
+            } catch (\Exception $e) {
+                $database[str_replace('historico_', '', $table)] = 0;
+            }
+        }
+
         $stats = [
-            'database' => [
-                'fornecedores' => DB::table('historico_fornecedores')->count(),
-                'notas' => DB::table('historico_notas')->count(),
-                'operacoes_banco' => DB::table('historico_operacoes_banco')->count(),
-                'baixas_perdidas' => DB::table('historico_baixas_perdidas')->count(),
-                'caixas' => DB::table('historico_caixa')->count(),
-                'usuarios' => DB::table('historico_usuarios')->count(),
-                'contas' => DB::table('historico_contas')->count(),
-                'convenios' => DB::table('historico_convenios')->count(),
-            ],
+            'database' => $database,
             'operacional' => [
                 'receivables' => DB::table('receivables')->count(),
                 'provisions' => DB::table('provisions')->count(),
