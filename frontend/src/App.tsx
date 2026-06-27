@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthLayout } from './layouts/AuthLayout'
 import { DashboardLayout } from './layouts/DashboardLayout'
 import { AdminLayout } from './layouts/AdminLayout'
@@ -27,6 +28,8 @@ import { ProvisoesPage } from './pages/provisoes/ProvisoesPage'
 import { ReceivablesPage } from './pages/receivables/ReceivablesPage'
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage'
 import { UpdatePage } from './pages/admin/UpdatePage'
+import BackupsPage from './pages/admin/BackupsPage'
+import LicensesPage from './pages/admin/LicensesPage'
 import { useAuthStore } from './stores/authStore'
 import { useConfigStore } from './stores/configStore'
 
@@ -49,7 +52,8 @@ export function App() {
   const { serverMode } = useConfigStore()
 
   return (
-    <Routes>
+    <ThemeProvider>
+      <Routes>
       <Route path="/conexao" element={<ConnectionPage />} />
       <Route path="/setup" element={<SetupPage />} />
       <Route path="/setup-wizard" element={<SetupWizardPage />} />
@@ -91,14 +95,16 @@ export function App() {
         <Route path="/admin/users" element={<div className="p-6"><h1 className="text-2xl font-bold">Gerenciamento de Usuários</h1><p className="text-muted-foreground">CRUD de usuários em desenvolvimento...</p></div>} />
         <Route path="/admin/permissions" element={<div className="p-6"><h1 className="text-2xl font-bold">Permissões e Roles</h1></div>} />
         <Route path="/admin/logs" element={<div className="p-6"><h1 className="text-2xl font-bold">Logs do Sistema</h1></div>} />
-        <Route path="/admin/backups" element={<div className="p-6"><h1 className="text-2xl font-bold">Backups</h1></div>} />
+        <Route path="/admin/backups" element={<BackupsPage />} />
         <Route path="/admin/containers" element={<div className="p-6"><h1 className="text-2xl font-bold">Infraestrutura</h1></div>} />
         <Route path="/admin/maintenance" element={<div className="p-6"><h1 className="text-2xl font-bold">Manutenção</h1></div>} />
         <Route path="/admin/integrity" element={<div className="p-6"><h1 className="text-2xl font-bold">Integridade</h1></div>} />
         <Route path="/admin/export" element={<div className="p-6"><h1 className="text-2xl font-bold">Exportação</h1></div>} />
         <Route path="/admin/server-config" element={<div className="p-6"><h1 className="text-2xl font-bold">Configuração de Servidor</h1></div>} />
         <Route path="/admin/updates" element={<UpdatePage />} />
+        <Route path="/admin/licenses" element={<LicensesPage />} />
       </Route>
-    </Routes>
+      </Routes>
+    </ThemeProvider>
   )
 }

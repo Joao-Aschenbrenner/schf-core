@@ -8,6 +8,7 @@ use App\Plugins\PluginLoader;
 use App\Services\AuditService;
 use App\Services\ApiDocumentationService;
 use App\Services\FeatureFlagService;
+use App\Services\LicenseService;
 use App\Services\ObservabilityService;
 use App\Services\Migration\MigrationRunner;
 use App\Services\Migration\ValidationEngine;
@@ -33,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(SignatureValidator::class);
         $this->app->singleton(UpdateService::class);
         $this->app->singleton(AuditService::class);
+        $this->app->singleton(LicenseService::class);
         $this->app->singleton(ObservabilityService::class);
         $this->app->singleton(ApiDocumentationService::class);
         $this->app->singleton(ValidationEngine::class);

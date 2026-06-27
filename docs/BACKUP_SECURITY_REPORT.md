@@ -7,7 +7,7 @@
 
 ## 1. Resumo da Segurança do Backup
 
-Este documento descreve as medidas de segurança implementadas no sistema de backup do Santa Casa Financeiro, cobrindo criptografia, gestão de chaves, controle de acesso e conformidade.
+Este documento descreve as medidas de segurança implementadas no sistema de backup do SCHF Core, cobrindo criptografia, gestão de chaves, controle de acesso e conformidade.
 
 ---
 
@@ -82,7 +82,7 @@ Este documento descreve as medidas de segurança implementadas no sistema de bac
 
 ### 4.3 Isolamento por Tenant (Futuro)
 - Preparado para multi-tenancy via `team_id` (Spatie teams)
-- Atualmente single-tenant (Santa Casa única)
+- Atualmente single-tenant
 
 ---
 
@@ -202,7 +202,7 @@ return Hash::check($password, $backup->password_hash);
 
 ## 10. Conclusão
 
-O sistema de backup do Santa Casa Financeiro implementa **defesa em profundidade** com:
+O sistema de backup do SCHF Core implementa **defesa em profundidade** com:
 - Criptografia forte (AES-256) em repouso
 - Controle de acesso granular (RBAC + ownership)
 - Integridade verificada (SHA-256 + verificação automática)

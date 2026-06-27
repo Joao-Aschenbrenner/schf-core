@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore'
 import { cn } from '../utils/cn'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
+import { ThemeToggle } from '../components/ui/ThemeToggle'
 
 const navItems = [
   { label: 'Dashboard', path: '/' },
@@ -113,9 +114,12 @@ export function DashboardLayout() {
             {user.data?.name || 'Usuário'}
           </p>
           <p className="text-xs text-muted-foreground">{user.data?.email}</p>
-          <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full justify-start text-muted-foreground">
-            Sair
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="flex-1 justify-start text-muted-foreground">
+              Sair
+            </Button>
+          </div>
         </div>
       </aside>
 

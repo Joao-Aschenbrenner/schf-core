@@ -1,6 +1,7 @@
 import { Navigate, NavLink, Outlet } from 'react-router-dom'
 import { useMasterAuthStore } from '../stores/masterAuthStore'
 import { masterAuthService } from '../services/adminApi'
+import { ThemeToggle } from '../components/ui/ThemeToggle'
 import {
   LayoutDashboard,
   Users,
@@ -27,6 +28,7 @@ const adminNavItems = [
   { label: 'Integridade', path: '/admin/integrity', icon: CheckCircle },
   { label: 'Exportar', path: '/admin/export', icon: Download },
   { label: 'Atualizações', path: '/admin/updates', icon: RefreshCw },
+  { label: 'Licenças', path: '/admin/licenses', icon: Shield },
 ]
 
 function MasterAuthGuard({ children }: { children: React.ReactNode }) {
@@ -89,13 +91,16 @@ export function AdminLayout() {
               <span className="text-xs text-muted-foreground">
                 {user?.email}
               </span>
-              <button
-                onClick={handleLogout}
-                className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                title="Sair do painel master"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <ThemeToggle />
+                <button
+                  onClick={handleLogout}
+                  className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                  title="Sair do painel master"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </aside>

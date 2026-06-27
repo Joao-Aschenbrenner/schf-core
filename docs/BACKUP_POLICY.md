@@ -1,6 +1,6 @@
 # BACKUP_POLICY.md
 
-# Política de Backup - Santa Casa Financeiro
+# Política de Backup - SCHF Core
 
 **Versão:** 1.0
 **Data:** 2026-06-19
@@ -10,7 +10,7 @@
 
 ## 1. Visão Geral
 
-Esta política define as regras e procedimentos para backup dos dados do sistema Santa Casa Financeiro, garantindo a integridade, disponibilidade e recuperabilidade dos dados em caso de falhas, desastres ou erros operacionais.
+Esta política define as regras e procedimentos para backup dos dados do sistema SCHF Core, garantindo a integridade, disponibilidade e recuperabilidade dos dados em caso de falhas, desastres ou erros operacionais.
 
 ---
 
