@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ApiDocsController;
+use App\Http\Controllers\Api\LicenseController;
 use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BackupController;
@@ -223,5 +224,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('{backup}/download', [BackupController::class, 'download']);
         Route::post('{backup}/restore', [RestoreController::class, 'restore']);
         Route::get('{backup}/validate', [RestoreController::class, 'validate']);
+    });
+
+    // License Management
+    Route::prefix('license')->group(function () {
+        Route::get('/', [LicenseController::class, 'index']);
+        Route::get('/info', [LicenseController::class, 'info']);
+        Route::post('/activate', [LicenseController::class, 'activate']);
+        Route::post('/validate', [LicenseController::class, 'validate']);
+        Route::post('/trial', [LicenseController::class, 'createTrial']);
+        Route::post('/{id}/suspend', [LicenseController::class, 'suspend']);
+        Route::post('/{id}/revoke', [LicenseController::class, 'revoke']);
     });
 });
