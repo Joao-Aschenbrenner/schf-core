@@ -68,8 +68,8 @@ Dados aceitos:
 {
     "name": "João Silva",
     "email": "admin@hospital-exemplo.com",
-    "password": "sua_senha_aqui",
-    "password_confirmation": "sua_senha_aqui"
+    "password": "min 8 caracteres",
+    "password_confirmation": "min 8 caracteres"
 }
 ```
 
