@@ -20,9 +20,9 @@
       - DB_HOST=mysql
       - DB_DATABASE=${DB_DATABASE:-schf}
       - DB_USERNAME=${DB_USERNAME:-schf}
-      - DB_PASSWORD=${DB_PASSWORD:-schf_secret}
+      - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_HOST=redis
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-schf_redis_secret}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - CACHE_DRIVER=redis
       - QUEUE_CONNECTION=redis
 
@@ -66,8 +66,8 @@
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-schf}
       MYSQL_USER: ${DB_USERNAME:-schf}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-schf_secret}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secret}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - mysql-data:/var/lib/mysql
       - ./infra/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
@@ -86,7 +86,7 @@
       - redis-data:/data
     networks:
       - schf-network
-    command: redis-server --requirepass ${REDIS_PASSWORD:-schf_redis_secret}
+    command: redis-server --requirepass ${REDIS_PASSWORD}
 
   queue:
     build:
@@ -108,9 +108,9 @@
       - DB_HOST=mysql
       - DB_DATABASE=${DB_DATABASE:-schf}
       - DB_USERNAME=${DB_USERNAME:-schf}
-      - DB_PASSWORD=${DB_PASSWORD:-schf_secret}
+      - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_HOST=redis
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-schf_redis_secret}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - CACHE_DRIVER=redis
       - QUEUE_CONNECTION=redis
 
