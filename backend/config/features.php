@@ -7,4 +7,5 @@ return [
     'auto_updates' => env('FEATURE_AUTO_UPDATES', false),
     'desktop_app' => env('FEATURE_DESKTOP_APP', false),
     'developer_mode' => env('FEATURE_DEVELOPER_MODE', false),
+    'migration_import' => env('FEATURE_MIGRATION_IMPORT', false),
 ];

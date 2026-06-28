@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\AuditAdminController;
 use App\Http\Controllers\Admin\BackupAdminController;
 use App\Http\Controllers\Admin\IntegrityController;
 use App\Http\Controllers\Admin\MaintenanceController;
+use App\Http\Controllers\Admin\MigrationBundleController;
 use App\Http\Controllers\SetupWizardController;
 use App\Http\Controllers\UpdateController;
 use Illuminate\Support\Facades\Gate;
@@ -122,6 +123,13 @@ Route::prefix('admin')->group(function () {
             Route::post('/maintenance/queue/restart', [MaintenanceController::class, 'restartQueue']);
             Route::post('/maintenance/sessions', [MaintenanceController::class, 'clearSessions']);
             Route::post('/maintenance/logs', [MaintenanceController::class, 'clearLogs']);
+
+            // Migration Bundle Import
+            Route::prefix('migration/bundles')->group(function () {
+                Route::post('/validate', [MigrationBundleController::class, 'validateBundle']);
+                Route::post('/preview', [MigrationBundleController::class, 'preview']);
+                Route::post('/import', [MigrationBundleController::class, 'import']);
+            });
         });
     });
 });

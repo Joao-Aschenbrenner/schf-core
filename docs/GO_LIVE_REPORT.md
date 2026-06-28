@@ -37,7 +37,7 @@ O projeto **SCHF** esta **APROVADO PARA GO-LIVE** em ambiente de producao web (D
 
 ### 3.1 Banco de Dados (Migracao Completa)
 - **22 migrations** executadas (13 historico + 7 operacional + 2 alter)
-- **11 lotes** extraidos Firebird -> MySQL (100% validados)
+- **11 lotes** extraidos da fonte legada para MySQL (100% validados)
 - **100% FK integrity** (34 FKs validadas, 0 orfaos)
 - **Somas financeiras** conferidas (tolerancia aceita)
 

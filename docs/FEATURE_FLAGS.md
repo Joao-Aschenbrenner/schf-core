@@ -6,7 +6,8 @@ O SCHF Core utiliza um sistema de feature flags para controle granular de funcio
 
 | Flag | Variável de Ambiente | Padrão | Descrição |
 |------|---------------------|--------|-----------|
-| `legacy_module` | `FEATURE_LEGACY_MODULE` | `false` | Habilita módulo de consultas legadas (Firebird) |
+| `legacy_module` | `FEATURE_LEGACY_MODULE` | `false` | Habilita módulo de consultas legadas somente leitura |
+| `migration_import` | `FEATURE_MIGRATION_IMPORT` | `false` | Habilita importação de Migration Bundles no painel master |
 | `multi_organization` | `FEATURE_MULTI_ORGANIZATION` | `true` | Habilita suporte a múltiplas organizações |
 | `setup_wizard` | `FEATURE_SETUP_WIZARD` | `true` | Habilita o wizard de configuração inicial |
 | `auto_updates` | `FEATURE_AUTO_UPDATES` | `false` | Habilita verificação e aplicação automática de updates |
@@ -24,6 +25,7 @@ FEATURE_SETUP_WIZARD=true
 FEATURE_AUTO_UPDATES=false
 FEATURE_DESKTOP_APP=false
 FEATURE_DEVELOPER_MODE=false
+FEATURE_MIGRATION_IMPORT=false
 ```
 
 ### Via Install Script
@@ -83,8 +85,13 @@ if (flags.multi_organization) {
 
 ### legacy_module
 
-- **false**: Oculta menu "Consultas Antigas" e desabilita conector Firebird
-- **true**: Habilita conector Firebird e menu de consultas legadas
+- **false**: Oculta menu "Consultas Antigas"
+- **true**: Habilita consultas legadas somente leitura
+
+### migration_import
+
+- **false**: Bloqueia upload/importação de Migration Bundles
+- **true**: Habilita `Sistema -> Migração` para validar, visualizar e importar Bundles
 
 ### multi_organization
 

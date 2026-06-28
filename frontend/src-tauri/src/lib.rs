@@ -381,7 +381,7 @@ fn get_app_data_dir(app_handle: tauri::AppHandle) -> String {
 
 #[tauri::command]
 fn ping() -> String {
-    "pong".to_string()
+    "ok".to_string()
 }
 
 // ─── Tunnel Commands ────────────────────────────────────────────
@@ -598,5 +598,5 @@ pub fn run() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("Erro ao iniciar Santa Casa Financeiro");
+        .expect("Erro ao iniciar SCHF Core");
 }

@@ -20,7 +20,7 @@ class Organization extends Model
         'address',
         'logo_path',
         'is_active',
-        'primary',
+        'is_primary',
         'settings',
     ];
 

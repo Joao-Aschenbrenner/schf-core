@@ -37,12 +37,6 @@ class CompatibilityChecker
             $warnings[] = "Core versão {$coreVersion} acima do máximo testado ({$maxVersion})";
         }
 
-        $sourceType = $manifest->getSourceType();
-        $supportedSources = ['firebird', 'sqlserver', 'postgresql', 'mysql', 'sqlite', 'csv', 'excel'];
-        if (!in_array(strtolower($sourceType), $supportedSources)) {
-            $issues[] = "Tipo de fonte não suportado: {$sourceType}";
-        }
-
         $dependencies = $manifest->getDependencies();
         foreach ($dependencies as $dep => $requiredVersion) {
             if (!$this->checkDependency($dep, $requiredVersion)) {
@@ -64,12 +58,11 @@ class CompatibilityChecker
             'compatible' => empty($issues),
             'core_version' => $coreVersion,
             'manifest_version' => $manifest->getVersion(),
-            'source_type' => $sourceType,
+            'bundle_format' => $manifest->getSourceType(),
             'issues' => $issues,
             'warnings' => $warnings,
             'checks_performed' => [
                 'core_version_range',
-                'source_type_support',
                 'dependencies',
                 'table_definitions',
                 'field_mappings',
@@ -100,6 +93,8 @@ class CompatibilityChecker
 
     protected function checkDependency(string $package, string $requiredVersion): bool
     {
+        unset($package, $requiredVersion);
+
         return true;
     }
 }

@@ -24,7 +24,7 @@ class MigrationCompatibilityCheckerTest extends TestCase
         $manifest = array_merge([
             'name' => 'Test Migration',
             'version' => '1.0.0',
-            'source_type' => 'firebird',
+            'bundle_format' => 'migration_bundle',
             'target_core_min' => '1.0.0',
             'target_core_max' => '2.0.0',
             'tables' => [['source' => 'test']],

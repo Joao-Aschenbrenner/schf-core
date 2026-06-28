@@ -3,7 +3,7 @@
 ## Visao Geral
 
 Dual-layer architecture:
-- **historico** (read-only): Dados migrados do SGH Firebird
+- **historico** (read-only): Dados migrados da fonte legada
 - **operacional** (2026+): Novos dados do sistema financeiro moderno
 
 ## Tabelas HISTORICO (13)

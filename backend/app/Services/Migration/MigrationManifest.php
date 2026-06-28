@@ -38,7 +38,7 @@ class MigrationManifest
 
     public function getSourceType(): string
     {
-        return $this->manifest['source_type'] ?? 'unknown';
+        return $this->manifest['bundle_format'] ?? 'migration_bundle';
     }
 
     public function getTargetCoreVersion(): string
@@ -140,7 +140,7 @@ class MigrationManifest
 
     public function isValid(): bool
     {
-        $required = ['name', 'version', 'source_type', 'tables', 'field_mappings'];
+        $required = ['name', 'version', 'tables', 'field_mappings'];
         foreach ($required as $key) {
             if (!isset($this->manifest[$key])) {
                 return false;

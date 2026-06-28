@@ -30,6 +30,7 @@ import { AdminDashboardPage } from './pages/admin/AdminDashboardPage'
 import { UpdatePage } from './pages/admin/UpdatePage'
 import BackupsPage from './pages/admin/BackupsPage'
 import LicensesPage from './pages/admin/LicensesPage'
+import MigrationImportPage from './pages/admin/MigrationImportPage'
 import { useAuthStore } from './stores/authStore'
 import { useConfigStore } from './stores/configStore'
 
@@ -99,6 +100,7 @@ export function App() {
         <Route path="/admin/containers" element={<div className="p-6"><h1 className="text-2xl font-bold">Infraestrutura</h1></div>} />
         <Route path="/admin/maintenance" element={<div className="p-6"><h1 className="text-2xl font-bold">Manutenção</h1></div>} />
         <Route path="/admin/integrity" element={<div className="p-6"><h1 className="text-2xl font-bold">Integridade</h1></div>} />
+        <Route path="/admin/migration" element={<MigrationImportPage />} />
         <Route path="/admin/export" element={<div className="p-6"><h1 className="text-2xl font-bold">Exportação</h1></div>} />
         <Route path="/admin/server-config" element={<div className="p-6"><h1 className="text-2xl font-bold">Configuração de Servidor</h1></div>} />
         <Route path="/admin/updates" element={<UpdatePage />} />

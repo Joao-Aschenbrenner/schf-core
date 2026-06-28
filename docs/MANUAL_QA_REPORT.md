@@ -50,7 +50,7 @@
 
 ## Warnings
 - `historico_baixas` table is empty (no dedicated extraction script)
-- `schf-firebird` container stopped (expected - migration phase complete)
+- Legacy extraction container stopped (expected - migration phase complete)
 - Frontend TypeScript build has pre-existing issues (missing Select/Dialog/Tabs components)
 
 ## Summary

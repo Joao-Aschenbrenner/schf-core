@@ -20,7 +20,7 @@ class MigrationManifestTest extends TestCase
         $manifest = [
             'name' => 'Test Migration',
             'version' => '1.0.0',
-            'source_type' => 'firebird',
+            'bundle_format' => 'migration_bundle',
             'tables' => [],
             'field_mappings' => [],
         ];
@@ -50,7 +50,7 @@ class MigrationManifestTest extends TestCase
         $manifest = [
             'name' => 'Test Migration',
             'version' => '1.0.0',
-            'source_type' => 'firebird',
+            'bundle_format' => 'migration_bundle',
             'tables' => [['source' => 'test']],
             'field_mappings' => ['test' => ['model' => 'TestModel']],
         ];
@@ -91,7 +91,7 @@ class MigrationManifestTest extends TestCase
         $manifest = [
             'name' => 'Test Migration',
             'version' => '1.0.0',
-            'source_type' => 'firebird',
+            'bundle_format' => 'migration_bundle',
             'tables' => [],
             'field_mappings' => ['users' => ['model' => 'App\\Models\\User']],
         ];
@@ -113,7 +113,7 @@ class MigrationManifestTest extends TestCase
         $manifest = [
             'name' => 'Test Migration',
             'version' => '1.0.0',
-            'source_type' => 'firebird',
+            'bundle_format' => 'migration_bundle',
             'tables' => [],
             'field_mappings' => [
                 'users' => [

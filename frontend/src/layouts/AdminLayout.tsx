@@ -14,6 +14,7 @@ import {
   Download,
   LogOut,
   RefreshCw,
+  Upload,
 } from 'lucide-react'
 
 const adminNavItems = [
@@ -26,6 +27,7 @@ const adminNavItems = [
   { label: 'Infraestrutura', path: '/admin/containers', icon: Container },
   { label: 'Manutenção', path: '/admin/maintenance', icon: Wrench },
   { label: 'Integridade', path: '/admin/integrity', icon: CheckCircle },
+  { label: 'Migração', path: '/admin/migration', icon: Upload },
   { label: 'Exportar', path: '/admin/export', icon: Download },
   { label: 'Atualizações', path: '/admin/updates', icon: RefreshCw },
   { label: 'Licenças', path: '/admin/licenses', icon: Shield },
