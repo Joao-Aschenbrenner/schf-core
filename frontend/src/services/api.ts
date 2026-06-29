@@ -41,6 +41,7 @@ api.interceptors.response.use(
 )
 
 export { api }
+export default api
 
 export async function healthCheck(): Promise<boolean> {
   const { apiUrl } = useConfigStore.getState()

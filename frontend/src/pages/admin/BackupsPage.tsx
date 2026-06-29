@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { backupService, Backup } from '../../services/backups';
 import { Button } from '../../components/ui/Button';
@@ -35,9 +35,6 @@ import {
   Database,
   FileArchive,
   HardDrive,
-  Clock,
-  CheckCircle,
-  XCircle,
   Loader2,
   AlertTriangle,
 } from 'lucide-react';

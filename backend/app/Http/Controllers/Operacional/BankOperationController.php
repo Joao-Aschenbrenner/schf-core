@@ -63,7 +63,8 @@ class BankOperationController extends Controller
         $saldoInicial = $bankAccount->current_balance;
 
         $operacoes = BankOperation::where('bank_account_id', $bankAccountId)
-            ->whereBetween('operation_date', [$dataFrom, $dataTo])
+            ->whereDate('operation_date', '>=', $dataFrom)
+            ->whereDate('operation_date', '<=', $dataTo)
             ->orderBy('operation_date')
             ->orderBy('id')
             ->get();

@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bankInvestmentService } from '@/services/bankInvestmentApi'
+import { bankAccountService } from '@/services/bankAccounts'
 import type { BankInvestment, BankAccount, PaginatedResponse } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import { Badge } from '@/components/ui/Badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/Dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog'
 import { Textarea } from '@/components/ui/Input'
-import { Plus, Download, RefreshCw, Calendar, DollarSign } from 'lucide-react'
+import { Plus, Download, RefreshCw } from 'lucide-react'
 
 function StatusBadge({ status }: { status: string }) {
   const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning'> = {
@@ -27,7 +28,6 @@ function TypeBadge({ type }: { type: string }) {
 
 export function AplicacoesPage() {
   const queryClient = useQueryClient()
-  const [selectedInvestment, setSelectedInvestment] = useState<BankInvestment | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [formData, setFormData] = useState({
@@ -48,7 +48,7 @@ export function AplicacoesPage() {
 
   const { data: bankAccounts } = useQuery({
     queryKey: ['bank-accounts-all'],
-    queryFn: () => bankInvestmentService.list?.({ per_page: 1000 }),
+    queryFn: () => bankAccountService.list({ per_page: 1000 }),
   })
 
   const createMutation = useMutation({
@@ -74,7 +74,6 @@ export function AplicacoesPage() {
     mutationFn: ({ id, data }: { id: number; data: { redeemed_amount: number; redeemed_at: string } }) => bankInvestmentService.redeem(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bank-investments'] })
-      setSelectedInvestment(null)
     },
   })
 

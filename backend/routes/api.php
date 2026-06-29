@@ -28,6 +28,8 @@ use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\MigrationBundleController;
 use App\Http\Controllers\SetupWizardController;
 use App\Http\Controllers\UpdateController;
+use App\Models\Historico\HistoricoFornecedor;
+use App\Models\Historico\HistoricoNota;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 
@@ -168,6 +170,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('payables/{payable}/pay', [PayableController::class, 'pay']);
     Route::get('payables/aging-report', [PayableController::class, 'agingReport']);
 
+    Route::apiResource('receivables', \App\Http\Controllers\Operacional\ReceivableController::class);
+    Route::post('receivables/{receivable}/approve', [\App\Http\Controllers\Operacional\ReceivableController::class, 'approve']);
+    Route::post('receivables/{receivable}/receive', [\App\Http\Controllers\Operacional\ReceivableController::class, 'receive']);
+
+    Route::apiResource('provisions', \App\Http\Controllers\Operacional\ProvisionController::class);
+    Route::post('provisions/{provision}/confirm', [\App\Http\Controllers\Operacional\ProvisionController::class, 'confirm']);
+    Route::post('provisions/{provision}/pay', [\App\Http\Controllers\Operacional\ProvisionController::class, 'pay']);
+    Route::post('provisions/{provision}/cancel', [\App\Http\Controllers\Operacional\ProvisionController::class, 'cancel']);
+
     Route::apiResource('ddas', DdaController::class)->except(['update', 'destroy']);
     Route::post('ddas/{dda}/link-payable', [DdaController::class, 'linkToPayable']);
     Route::post('ddas/{dda}/reject', [DdaController::class, 'reject']);
@@ -227,12 +238,21 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Backup & Restore
     Route::prefix('backups')->group(function () {
-        Route::apiResource('', BackupController::class)->except(['update']);
+        Route::get('/', [BackupController::class, 'index']);
+        Route::post('/', [BackupController::class, 'store']);
         Route::post('cleanup', [BackupController::class, 'cleanup']);
         Route::get('{backup}/verify', [BackupController::class, 'verify']);
         Route::get('{backup}/download', [BackupController::class, 'download']);
         Route::post('{backup}/restore', [RestoreController::class, 'restore']);
         Route::get('{backup}/validate', [RestoreController::class, 'validate']);
+        Route::get('{backup}', [BackupController::class, 'show']);
+        Route::delete('{backup}', [BackupController::class, 'destroy']);
+    });
+
+    Route::prefix('historico')->group(function () {
+        Route::get('fornecedores', fn () => response()->json(HistoricoFornecedor::query()->paginate()));
+        Route::get('notas', fn () => response()->json(HistoricoNota::query()->paginate()));
+        Route::get('notas/{nota}', fn (HistoricoNota $nota) => response()->json(['data' => $nota]));
     });
 
     // License Management

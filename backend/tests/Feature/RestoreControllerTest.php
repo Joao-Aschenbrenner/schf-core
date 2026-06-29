@@ -47,7 +47,19 @@ beforeEach(function () {
 });
 
 it('can restore a backup', function () {
-    $checksum = hash('sha256', 'test');
+    Storage::fake('local');
+
+    $path = Storage::disk('local')->path('backups/test_db.zip');
+    if (!is_dir(dirname($path))) {
+        mkdir(dirname($path), 0755, true);
+    }
+
+    $zip = new ZipArchive();
+    $zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+    $zip->addFromString('database/dump.sql', '-- test dump');
+    $zip->close();
+
+    $checksum = hash_file('sha256', $path);
     
     $backup = Backup::factory()->create([
         'user_id' => $this->user->id,
@@ -58,10 +70,6 @@ it('can restore a backup', function () {
         'file_name' => 'test_db.zip',
         'checksum' => $checksum,
     ]);
-
-    // Create dummy zip file
-    Storage::fake('local');
-    Storage::disk('local')->put('backups/test_db.zip', 'dummy zip content');
 
     actingAs($this->user)
         ->postJson("/api/backups/{$backup->id}/restore", [

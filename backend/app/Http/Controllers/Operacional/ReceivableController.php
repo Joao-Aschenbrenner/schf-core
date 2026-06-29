@@ -33,9 +33,11 @@ class ReceivableController extends Controller
 
     public function store(StoreReceivableRequest $request): JsonResponse
     {
-        $receivable = Receivable::create($request->validated());
+        $receivable = Receivable::create($request->validated() + [
+            'created_by' => auth()->id(),
+        ]);
 
-        return response()->json(['data' => $receivable], 201);
+        return response()->json(['data' => $receivable->fresh()], 201);
     }
 
     public function show(Receivable $receivable): JsonResponse

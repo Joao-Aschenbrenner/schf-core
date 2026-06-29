@@ -67,7 +67,7 @@
       MYSQL_DATABASE: ${DB_DATABASE:-schf}
       MYSQL_USER: ${DB_USERNAME:-schf}
       MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-${MYSQL_ROOT_PASSWORD}}
     volumes:
       - mysql-data:/var/lib/mysql
       - ./infra/mysql/my.cnf:/etc/mysql/conf.d/my.cnf

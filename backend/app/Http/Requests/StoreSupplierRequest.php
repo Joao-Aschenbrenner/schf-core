@@ -6,6 +6,11 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreSupplierRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge($this->sanitize($this->all()));
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -41,5 +46,17 @@ class StoreSupplierRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'legacy_id' => ['nullable', 'integer'],
         ];
+    }
+
+    private function sanitize(array $data): array
+    {
+        foreach (['name', 'trade_name', 'contact_name', 'notes'] as $field) {
+            if (isset($data[$field]) && is_string($data[$field])) {
+                $clean = trim(str_ireplace('javascript:', '', strip_tags($data[$field])));
+                $data[$field] = $clean !== '' ? $clean : 'sanitized';
+            }
+        }
+
+        return $data;
     }
 }

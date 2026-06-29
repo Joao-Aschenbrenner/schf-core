@@ -7,6 +7,7 @@ use App\Http\Requests\RestoreRequest;
 use App\Models\Backup;
 use App\Services\Backup\RestoreService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
 
 class RestoreController extends Controller
 {
@@ -44,8 +45,7 @@ class RestoreController extends Controller
     public function validate(Backup $backup): JsonResponse
     {
         // Verificar se arquivo existe
-        $filePath = storage_path('app/' . $backup->file_path);
-        $exists = file_exists($filePath);
+        $exists = $backup->file_path && Storage::disk('local')->exists($backup->file_path);
         
         // Verificar integridade se arquivo existe
         $integrity = false;

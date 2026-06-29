@@ -37,6 +37,7 @@ adminApi.interceptors.response.use(
 )
 
 export { adminApi }
+export default adminApi
 
 export const masterAuthService = {
   async login(email: string, password: string) {

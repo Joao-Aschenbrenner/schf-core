@@ -13,6 +13,11 @@ uses(
     Illuminate\Foundation\Testing\RefreshDatabase::class,
 )->in('Unit');
 
+uses(
+    Tests\TestCase::class,
+    Illuminate\Foundation\Testing\RefreshDatabase::class,
+)->in('Security');
+
 expect()->extend('toBeOne', function () {
     return $this->toBe(1);
 });

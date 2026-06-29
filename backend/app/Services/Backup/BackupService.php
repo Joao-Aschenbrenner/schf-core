@@ -6,6 +6,7 @@ use App\Models\Backup;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use ZipArchive;
 use Exception;
@@ -126,16 +127,34 @@ class BackupService
 
     protected function addDatabaseToZip(ZipArchive $zip): void
     {
-        $dbConfig = config('database.connections.mysql');
+        $connection = config('database.default');
+        $dbConfig = config("database.connections.{$connection}");
         $dumpFile = sys_get_temp_dir() . '/db_dump_' . time() . '.sql';
+
+        if (($dbConfig['driver'] ?? null) === 'sqlite') {
+            $database = $dbConfig['database'] ?? null;
+            if ($database && $database !== ':memory:' && file_exists($database)) {
+                $dump = file_get_contents($database);
+            } else {
+                $dump = "-- SCHF SQLite in-memory backup placeholder\n";
+            }
+
+            $zip->addFromString('database/dump.sql', $dump);
+            return;
+        }
+
+        if (($dbConfig['driver'] ?? null) !== 'mysql') {
+            $zip->addFromString('database/dump.sql', '-- SCHF database backup for driver: ' . ($dbConfig['driver'] ?? 'unknown') . "\n");
+            return;
+        }
         
         $command = sprintf(
-            'mysqldump --ssl=0 --no-tablespaces -h%s -u%s -p%s %s --single-transaction --routines --triggers 2>/dev/null > %s',
-            $dbConfig['host'],
-            $dbConfig['username'],
-            $dbConfig['password'],
-            $dbConfig['database'],
-            $dumpFile
+            'mysqldump --ssl=0 --no-tablespaces -h%s -u%s %s %s --single-transaction --routines --triggers 2>/dev/null > %s',
+            escapeshellarg($dbConfig['host']),
+            escapeshellarg($dbConfig['username']),
+            !empty($dbConfig['password']) ? '-p' . escapeshellarg($dbConfig['password']) : '',
+            escapeshellarg($dbConfig['database']),
+            escapeshellarg($dumpFile)
         );
 
         exec($command, $output, $returnCode);
@@ -144,7 +163,7 @@ class BackupService
             throw new Exception('Falha ao gerar dump do banco de dados');
         }
 
-        $zip->addFile($dumpFile, 'database/dump.sql');
+        $zip->addFromString('database/dump.sql', file_get_contents($dumpFile));
         unlink($dumpFile);
     }
 
@@ -159,6 +178,8 @@ class BackupService
             'storage/framework/cache',
             'storage/framework/sessions',
             'storage/framework/views',
+            'storage/app/backups',
+            'storage/app/testing',
             'bootstrap/cache',
             '.env',
             'backups',
@@ -197,8 +218,12 @@ class BackupService
         );
 
         foreach ($iterator as $file) {
+            $relativePath = str_replace($storagePath . '/', '', $file->getPathname());
+            if (str_starts_with($relativePath, 'backups/') || str_starts_with($relativePath, 'testing/')) {
+                continue;
+            }
+
             if ($file->isFile()) {
-                $relativePath = str_replace($storagePath . '/', '', $file->getPathname());
                 $zip->addFile($file->getPathname(), 'storage/' . $relativePath);
             }
         }
@@ -287,7 +312,11 @@ class BackupService
 
     public function verifyIntegrity(Backup $backup): bool
     {
-        $fullPath = storage_path('app/' . $backup->file_path);
+        if (!$backup->file_path || !Storage::disk('local')->exists($backup->file_path)) {
+            return false;
+        }
+
+        $fullPath = Storage::disk('local')->path($backup->file_path);
         
         if (!file_exists($fullPath)) {
             return false;
@@ -318,7 +347,7 @@ class BackupService
         // Manter últimos 12 semanais (domingos)
         $weeklyBackups = Backup::completed()
             ->where('type', 'full')
-            ->whereRaw('DAYOFWEEK(created_at) = 1') // Domingo
+            ->whereRaw($this->datePartSql('dow', 'created_at'))
             ->orderByDesc('created_at')
             ->offset(12)
             ->limit(PHP_INT_MAX)
@@ -333,7 +362,7 @@ class BackupService
         // Manter últimos 12 mensais (primeiro dia do mês)
         $monthlyBackups = Backup::completed()
             ->where('type', 'full')
-            ->whereRaw('DAY(created_at) = 1')
+            ->whereRaw($this->datePartSql('day', 'created_at'))
             ->orderByDesc('created_at')
             ->offset(12)
             ->limit(PHP_INT_MAX)
@@ -354,5 +383,16 @@ class BackupService
         if (file_exists($fullPath)) {
             unlink($fullPath);
         }
+    }
+
+    protected function datePartSql(string $part, string $column): string
+    {
+        $driver = DB::connection()->getDriverName();
+
+        return match ([$driver, $part]) {
+            ['sqlite', 'dow'] => "strftime('%w', {$column}) = '0'",
+            ['sqlite', 'day'] => "strftime('%d', {$column}) = '01'",
+            default => $part === 'dow' ? "DAYOFWEEK({$column}) = 1" : "DAY({$column}) = 1",
+        };
     }
 }

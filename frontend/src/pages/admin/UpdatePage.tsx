@@ -8,7 +8,6 @@ import { updateApi, UpdateCheck, UpdateResult } from '@/services/updateApi'
 export function UpdatePage() {
   const [updateInfo, setUpdateInfo] = useState<UpdateCheck | null>(null)
   const [changelog, setChangelog] = useState<string>('')
-  const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<'check' | 'update' | 'rollback' | null>(null)
   const [result, setResult] = useState<UpdateResult | null>(null)
   const [error, setError] = useState<string | null>(null)

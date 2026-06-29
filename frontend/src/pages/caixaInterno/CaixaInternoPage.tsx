@@ -1,18 +1,16 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { cashRegisterService, cashMovementService } from '@/services/cashRegisterApi'
-import type { CashRegister, CashMovement, PaginatedResponse } from '@/types'
+import type { CashRegister, CashMovement } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import { Badge } from '@/components/ui/Badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/Dialog'
 import { Textarea } from '@/components/ui/Input'
-import { Plus, X, Check, Download, Calendar, DollarSign } from 'lucide-react'
-import { format, addDays, startOfDay } from 'date-fns'
+import { Plus, Check, Download } from 'lucide-react'
+import { format } from 'date-fns'
 
 export function CaixaInternoPage() {
   const queryClient = useQueryClient()
@@ -27,7 +25,7 @@ export function CaixaInternoPage() {
     queryFn: () => cashRegisterService.list({ ...periodo, per_page: 1000 }),
   })
 
-  const openRegister = useMutation({
+  const openRegisterMutation = useMutation({
     mutationFn: (data: { date: string; opening_balance: number }) => cashRegisterService.open(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cash-registers'] })
@@ -56,19 +54,11 @@ export function CaixaInternoPage() {
     },
   })
 
-  const openRegisterDialog = useMutation({
-    mutationFn: (data: { date: string; opening_balance: number }) => cashRegisterService.open(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cash-registers'] })
-    },
-  })
-
-  const openRegisterForm = { date: format(new Date(), 'yyyy-MM-dd'), opening_balance: 0 }
-  const movementForm = { type: 'credit' as 'credit' | 'debit', amount: 0, description: '', category: '', payment_method: '', document: '' }
-  const [selectedRegister, setSelectedRegister] = useState<CashRegister | null>(null)
+  const [openRegisterForm, setOpenRegisterForm] = useState({ date: format(new Date(), 'yyyy-MM-dd'), opening_balance: 0 })
+  const [movementForm, setMovementForm] = useState({ type: 'credit' as 'credit' | 'debit', amount: 0, description: '', category: '', payment_method: '', document: '' })
 
   const openRegisterHandle = () => {
-    openRegisterDialog.mutate(openRegisterForm)
+    openRegisterMutation.mutate(openRegisterForm)
   }
 
   const closeRegisterHandle = (register: CashRegister) => {
@@ -80,9 +70,7 @@ export function CaixaInternoPage() {
     setMovementForm({ type: 'credit', amount: 0, description: '', category: '', payment_method: '', document: '' })
   }
 
-  const [movementForm, setMovementForm] = useState({ type: 'credit' as 'credit' | 'debit', amount: 0, description: '', category: '', payment_method: '', document: '' })
-
-  const openRegister = registers?.data?.find(r => r.status === 'open')
+  const currentOpenRegister = registers?.data?.find(r => r.status === 'open')
 
   return (
     <div className="space-y-4">
@@ -101,7 +89,7 @@ export function CaixaInternoPage() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={value => setActiveTab(value as typeof activeTab)} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="abertura">Abertura</TabsTrigger>
           <TabsTrigger value="fechamento">Fechamento</TabsTrigger>
@@ -113,12 +101,12 @@ export function CaixaInternoPage() {
           <Card className="mt-4">
             <CardHeader><CardTitle>Abertura de Caixa</CardTitle></CardHeader>
             <CardContent>
-              {openRegister ? (
+              {currentOpenRegister ? (
                 <div className="space-y-4">
                   <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                     <p className="font-medium text-green-800">Caixa ja aberto hoje</p>
-                    <p className="text-sm text-green-700">Aberto por {openRegister.operator} as {openRegister.date}</p>
-                    <p className="text-sm text-green-700">Saldo abertura: {openRegister.opening_balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <p className="text-sm text-green-700">Aberto por {currentOpenRegister.operator} as {currentOpenRegister.date}</p>
+                    <p className="text-sm text-green-700">Saldo abertura: {currentOpenRegister.opening_balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                   </div>
                 </div>
               ) : (
@@ -142,7 +130,7 @@ export function CaixaInternoPage() {
                       />
                     </div>
                   </div>
-                  <Button onClick={openRegisterHandle} disabled={openRegisterForm.mutating}>
+                  <Button onClick={openRegisterHandle} disabled={openRegisterMutation.isPending}>
                     <Plus className="w-4 h-4 mr-2" /> Abrir Caixa
                   </Button>
                 </div>
@@ -155,20 +143,20 @@ export function CaixaInternoPage() {
           <Card className="mt-4">
             <CardHeader><CardTitle>Fechamento de Caixa</CardTitle></CardHeader>
             <CardContent>
-              {openRegister ? (
+              {currentOpenRegister ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-3 gap-4">
                     <Card>
                       <CardHeader className="pb-1"><CardTitle className="text-sm text-muted-foreground">Saldo Abertura</CardTitle></CardHeader>
-                      <CardContent><p className="text-2xl font-mono">{openRegister.opening_balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p></CardContent>
+                       <CardContent><p className="text-2xl font-mono">{currentOpenRegister.opening_balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p></CardContent>
                     </Card>
                     <Card>
                       <CardHeader className="pb-1"><CardTitle className="text-sm text-muted-foreground">Total Creditos</CardTitle></CardHeader>
-                      <CardContent><p className="text-2xl font-mono text-green-600">{openRegister.total_credits?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p></CardContent>
+                       <CardContent><p className="text-2xl font-mono text-green-600">{currentOpenRegister.total_credits?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p></CardContent>
                     </Card>
                     <Card>
                       <CardHeader className="pb-1"><CardTitle className="text-sm text-muted-foreground">Total Debitos</CardTitle></CardHeader>
-                      <CardContent><p className="text-2xl font-mono text-red-600">{openRegister.total_debits?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p></CardContent>
+                       <CardContent><p className="text-2xl font-mono text-red-600">{currentOpenRegister.total_debits?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p></CardContent>
                     </Card>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -177,7 +165,7 @@ export function CaixaInternoPage() {
                       <Input
                         type="number"
                         step="0.01"
-                        value={openRegister.closing_balance || (openRegister.opening_balance + openRegister.total_credits - openRegister.total_debits)}
+                         value={currentOpenRegister.closing_balance || (currentOpenRegister.opening_balance + currentOpenRegister.total_credits - currentOpenRegister.total_debits)}
                         readOnly
                       />
                     </div>
@@ -186,7 +174,7 @@ export function CaixaInternoPage() {
                       <Textarea placeholder="Observacoes do fechamento" rows={2} />
                     </div>
                   </div>
-                  <Button onClick={() => closeRegisterHandle(openRegister)}>
+                   <Button onClick={() => closeRegisterHandle(currentOpenRegister)}>
                     <Check className="w-4 h-4 mr-2" /> Fechar Caixa
                   </Button>
                 </div>
@@ -203,7 +191,7 @@ export function CaixaInternoPage() {
           <Card className="mt-4">
             <CardHeader><CardTitle>Lancamento de Movimento</CardTitle></CardHeader>
             <CardContent>
-              {openRegister ? (
+              {currentOpenRegister ? (
                 <div className="space-y-4 max-w-2xl">
                   <div className="grid grid-cols-2 gap-4">
                     <Select value={movementForm.type} onValueChange={v => setMovementForm(p => ({ ...p, type: v as 'credit' | 'debit' }))}>
@@ -248,7 +236,7 @@ export function CaixaInternoPage() {
                     value={movementForm.document}
                     onChange={e => setMovementForm(p => ({ ...p, document: e.target.value }))}
                   />
-                  <Button onClick={() => addMovementHandle(openRegister)} disabled={!movementForm.description || movementForm.amount <= 0}>
+                  <Button onClick={() => addMovementHandle(currentOpenRegister)} disabled={!movementForm.description || movementForm.amount <= 0}>
                     <Plus className="w-4 h-4 mr-2" /> Adicionar Movimento
                   </Button>
                 </div>

@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { receivableService } from '@/services/receivableApi'
+import { supplierService } from '@/services/suppliers'
 import type { Receivable, Supplier, PaginatedResponse } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import { Badge } from '@/components/ui/Badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog'
 import { Textarea } from '@/components/ui/Input'
-import { Plus, Download, Check, Clock, X } from 'lucide-react'
+import { Plus, Download, Check, DollarSign } from 'lucide-react'
 
 function StatusBadge({ status }: { status: string }) {
   const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning'> = {
@@ -44,7 +45,7 @@ export function ReceivablesPage() {
 
   const { data: suppliers } = useQuery({
     queryKey: ['suppliers-all'],
-    queryFn: () => receivableService.list?.({ per_page: 1000 }),
+    queryFn: () => supplierService.list({ per_page: 1000 }),
   })
 
   const createMutation = useMutation({

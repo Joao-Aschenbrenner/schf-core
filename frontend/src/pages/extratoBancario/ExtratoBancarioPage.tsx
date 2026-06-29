@@ -2,15 +2,14 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { historicoService } from '@/services/historicoApi'
 import { bankOperationService } from '@/services/bankOperationApi'
-import type { HistoricoConta, BankAccount, ExtratoBancario, PaginatedResponse } from '@/types'
+import type { ExtratoBancario } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
-import { Badge } from '@/components/ui/Badge'
 import { Download } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 
 export function ExtratoBancarioPage() {
   const [mode, setMode] = useState<'historico' | 'operacional'>('historico')
@@ -83,7 +82,7 @@ export function ExtratoBancarioPage() {
         </div>
       </div>
 
-      <Tabs value={mode} onValueChange={setMode} className="w-full mb-4">
+      <Tabs value={mode} onValueChange={value => setMode(value as typeof mode)} className="w-full mb-4">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="historico">Historico (SGH)</TabsTrigger>
           <TabsTrigger value="operacional">Operacional (2026+)</TabsTrigger>

@@ -19,6 +19,7 @@ class RolePermissionSeeder extends Seeder
             'prestacao_contas',
             'auditoria',
             'visualizador',
+            'user',
         ];
 
         foreach ($this->guards as $guard) {

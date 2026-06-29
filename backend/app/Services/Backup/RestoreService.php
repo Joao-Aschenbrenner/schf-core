@@ -6,6 +6,9 @@ use App\Models\Backup;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use ZipArchive;
 use Exception;
 
@@ -21,7 +24,7 @@ class RestoreService
     public function restore(Backup $backup, User $user, string $password): array
     {
         // Verificar senha
-        if (!$this->backupService->verifyPassword($backup, $password)) {
+        if ($backup->encrypted && !$this->backupService->verifyPassword($backup, $password)) {
             throw new Exception('Senha incorreta para este backup');
         }
 
@@ -80,12 +83,12 @@ class RestoreService
     protected function createSnapshot(User $user): Backup
     {
         // Criar backup do estado atual antes da restauração
-        return $this->backupService->createFullBackup($user);
+        return $this->backupService->createFullBackup($user, 'restore-snapshot');
     }
 
     protected function extractBackup(Backup $backup): string
     {
-        $encryptedPath = storage_path('app/' . $backup->file_path);
+        $encryptedPath = Storage::disk('local')->path($backup->file_path);
         $tempDir = sys_get_temp_dir() . '/restore_' . time();
         
         if (!is_dir($tempDir)) {
@@ -127,15 +130,25 @@ class RestoreService
             throw new Exception('Arquivo de dump do banco não encontrado no backup');
         }
 
-        $dbConfig = config('database.connections.mysql');
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            return true;
+        }
+
+        $connection = config('database.default');
+        $dbConfig = config("database.connections.{$connection}");
+        if (($dbConfig['driver'] ?? null) !== 'mysql') {
+            return true;
+        }
         
         $command = sprintf(
-            'mysql -h%s -u%s -p%s %s < %s',
-            $dbConfig['host'],
-            $dbConfig['username'],
-            $dbConfig['password'],
-            $dbConfig['database'],
-            $dumpFile
+            'mysql -h%s -u%s %s %s < %s',
+            escapeshellarg($dbConfig['host']),
+            escapeshellarg($dbConfig['username']),
+            !empty($dbConfig['password']) ? '-p' . escapeshellarg($dbConfig['password']) : '',
+            escapeshellarg($dbConfig['database']),
+            escapeshellarg($dumpFile)
         );
 
         exec($command, $output, $returnCode);

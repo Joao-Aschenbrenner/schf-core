@@ -70,9 +70,9 @@ class BackupController extends Controller
             abort(404, 'Arquivo não disponível');
         }
 
-        $path = storage_path('app/' . $backup->file_path);
+        $path = Storage::disk('local')->path($backup->file_path);
         
-        if (!file_exists($path)) {
+        if (!Storage::disk('local')->exists($backup->file_path)) {
             abort(404, 'Arquivo não encontrado');
         }
 
@@ -81,10 +81,10 @@ class BackupController extends Controller
 
     public function destroy(Backup $backup): JsonResponse
     {
-        $filePath = storage_path('app/' . $backup->file_path);
+        $filePath = $backup->file_path;
         
-        if (file_exists($filePath)) {
-            unlink($filePath);
+        if ($filePath && Storage::disk('local')->exists($filePath)) {
+            Storage::disk('local')->delete($filePath);
         }
         
         $backup->delete();

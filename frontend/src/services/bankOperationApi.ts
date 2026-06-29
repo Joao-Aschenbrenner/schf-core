@@ -25,4 +25,9 @@ export const bankOperationService = {
   async delete(id: number): Promise<void> {
     await api.delete(`/bank-operations/${id}`)
   },
+
+  async extrato(params: Record<string, any>) {
+    const response = await api.get('/operacional/bank-operations/extrato', { params })
+    return response.data.data ?? response.data
+  },
 }

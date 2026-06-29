@@ -26,11 +26,9 @@ import {
   Ban,
   Trash2,
   Clock,
-  CheckCircle,
   XCircle,
   AlertTriangle,
   Loader2,
-  Plus,
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:9080/api';

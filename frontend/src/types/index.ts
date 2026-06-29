@@ -316,6 +316,8 @@ export interface ExtratoBancario {
   saldo_inicial: number
   operacoes: HistoricoOperacaoBanco[]
   saldo_final: number
+  total_creditos?: number
+  total_debitos?: number
 }
 
 export interface ExtratoCaixa {
@@ -336,6 +338,8 @@ export interface Receivable {
   health_plan_id: number | null
   health_plan?: HealthPlan
   amount: number
+  discount: number
+  interest: number
   received_amount: number
   due_date: string
   received_date: string | null
