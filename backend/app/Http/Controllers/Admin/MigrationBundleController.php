@@ -22,7 +22,7 @@ class MigrationBundleController extends Controller
         }
 
         $request->validate([
-            'bundle' => ['required', 'file', 'mimes:zip'],
+            'bundle' => ['required', 'file'],
         ]);
 
         return response()->json($this->importer->validate($request->file('bundle')));
@@ -35,7 +35,7 @@ class MigrationBundleController extends Controller
         }
 
         $request->validate([
-            'bundle' => ['required', 'file', 'mimes:zip'],
+            'bundle' => ['required', 'file'],
         ]);
 
         return response()->json($this->importer->preview($request->file('bundle')));
@@ -48,7 +48,7 @@ class MigrationBundleController extends Controller
         }
 
         $request->validate([
-            'bundle' => ['required', 'file', 'mimes:zip'],
+            'bundle' => ['required', 'file'],
             'confirm' => ['accepted'],
         ]);
 

@@ -50,13 +50,13 @@ export default function MigrationImportPage() {
           <FileArchive className="w-6 h-6 text-primary" />
           <div>
             <h2 className="font-semibold">Selecionar Bundle</h2>
-            <p className="text-sm text-muted-foreground">Arquivo esperado: <code>migration-package.zip</code></p>
+            <p className="text-sm text-muted-foreground">Arquivo esperado: <code>migration-package.schf</code></p>
           </div>
         </div>
 
         <input
           type="file"
-          accept=".zip"
+          accept=".schf"
           onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           className="block w-full text-sm"
         />

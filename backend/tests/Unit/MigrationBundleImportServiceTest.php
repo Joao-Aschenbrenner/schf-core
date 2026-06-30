@@ -2,13 +2,31 @@
 
 namespace Tests\Unit;
 
+use App\Models\Payable;
 use App\Services\MigrationBundleImportService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use SCHF\SDK\Bundle\Builder;
+use SCHF\SDK\Bundle\Contract;
 use Tests\TestCase;
-use ZipArchive;
 
 class MigrationBundleImportServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
+    private array $bundlePaths = [];
+
+    protected function tearDown(): void
+    {
+        foreach ($this->bundlePaths as $path) {
+            if (file_exists($path)) {
+                unlink($path);
+            }
+        }
+
+        parent::tearDown();
+    }
+
     public function test_it_validates_a_minimal_bundle(): void
     {
         $file = $this->createBundle();
@@ -33,79 +51,81 @@ class MigrationBundleImportServiceTest extends TestCase
         $this->assertSame(0, $result['summary']['users.json']);
     }
 
-    private function createBundle(): UploadedFile
+    public function test_it_imports_a_synthetic_sdk_bundle(): void
     {
-        $dir = sys_get_temp_dir() . '/schf_bundle_' . uniqid();
-        mkdir($dir, 0755, true);
-
-        $payloads = [
-            'organization.json' => [
-                'external_id' => 'test-org',
-                'name' => 'Test Organization',
-                'legal_name' => null,
-                'metadata' => [],
+        $file = $this->createBundle([
+            'suppliers.json' => [
+                ['external_id' => 'SUP-001', 'name' => 'Synthetic Supplier Alpha', 'active' => true],
             ],
-            'users.json' => [],
-            'roles.json' => [],
-            'permissions.json' => [],
-            'suppliers.json' => [],
-            'accounts.json' => [],
-            'banks.json' => [],
-            'categories.json' => [],
-            'payments.json' => [],
-            'expenses.json' => [],
-            'report.json' => [
-                'status' => 'ready',
-                'generated_at' => '2026-01-01T00:00:00Z',
-                'summary' => [],
-                'warnings' => [],
-                'errors' => [],
+            'categories.json' => [
+                ['external_id' => 'CAT-001', 'name' => 'Synthetic Services', 'type' => 'expense'],
             ],
-        ];
+            'accounts.json' => [
+                [
+                    'external_id' => 'ACC-001',
+                    'name' => 'Synthetic Operating Account',
+                    'bank_name' => 'SYNBANK',
+                    'opening_balance' => 1000,
+                    'metadata' => ['agency' => '0001', 'account_number' => 'SYN-0001'],
+                ],
+            ],
+            'payments.json' => [
+                [
+                    'external_id' => 'PAY-001',
+                    'direction' => 'payable',
+                    'supplier_external_id' => 'SUP-001',
+                    'category_external_id' => 'CAT-001',
+                    'account_external_id' => 'ACC-001',
+                    'description' => 'Synthetic service invoice',
+                    'amount' => 150,
+                    'due_date' => '2026-07-10',
+                    'status' => 'pending',
+                ],
+            ],
+            'expenses.json' => [
+                [
+                    'external_id' => 'EXP-001',
+                    'category_external_id' => 'CAT-001',
+                    'account_external_id' => 'ACC-001',
+                    'description' => 'Synthetic office expense',
+                    'amount' => 10,
+                    'date' => '2026-07-01',
+                ],
+            ],
+        ]);
+        $service = app(MigrationBundleImportService::class);
 
-        foreach ($payloads as $name => $payload) {
-            file_put_contents($dir . '/' . $name, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL);
+        $result = $service->import($file);
+
+        $this->assertTrue($result['valid']);
+        $this->assertSame(1, $result['imported']['suppliers']);
+        $this->assertSame(1, $result['imported']['categories']);
+        $this->assertSame(1, $result['imported']['accounts']);
+        $this->assertSame(1, $result['imported']['payments']);
+        $this->assertSame(1, $result['imported']['expenses']);
+        $this->assertDatabaseHas('suppliers', ['name' => 'Synthetic Supplier Alpha']);
+        $this->assertDatabaseHas('expense_categories', ['code' => 'CAT-001']);
+        $this->assertDatabaseHas('bank_accounts', ['account' => 'SYN-0001']);
+        $this->assertSame(2, Payable::count());
+    }
+
+    private function createBundle(array $records = []): UploadedFile
+    {
+        $builder = new Builder();
+        $builder->setGenerator('core-test', '1.0.0');
+        $builder->setOrganization('test-org', 'Test Organization', [
+            'legal_name' => null,
+            'metadata' => [],
+        ]);
+        $builder->setSource('synthetic', null, null, str_repeat('0', 64));
+
+        foreach ($records as $file => $rows) {
+            $builder->addRecords($file, $rows);
         }
 
-        $manifest = [
-            'bundle_version' => '1.0.0',
-            'sdk_version' => '1.0.0',
-            'core_min_version' => '1.5.0',
-            'core_max_version' => null,
-            'generated_at' => '2026-01-01T00:00:00Z',
-            'generator' => ['name' => 'test', 'version' => '1.0.0', 'plugin' => null],
-            'organization' => ['external_id' => 'test-org', 'name' => 'Test Organization'],
-            'source' => [
-                'type' => 'unknown',
-                'product' => null,
-                'version' => null,
-                'inventory_hash' => str_repeat('0', 64),
-            ],
-            'files' => [],
-        ];
-        file_put_contents($dir . '/manifest.json', json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL);
+        $path = $builder->build();
+        $this->bundlePaths[] = $path;
 
-        $checksums = [];
-        foreach (glob($dir . '/*') as $path) {
-            if (basename($path) === 'checksum.sha256') {
-                continue;
-            }
-            $checksums[] = strtoupper(hash_file('sha256', $path)) . '  ' . basename($path);
-        }
-        sort($checksums);
-        file_put_contents($dir . '/checksum.sha256', implode(PHP_EOL, $checksums) . PHP_EOL);
-
-        $zipPath = $dir . '/migration-package.zip';
-        $zip = new ZipArchive();
-        $zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
-        foreach (glob($dir . '/*') as $path) {
-            if ($path === $zipPath) {
-                continue;
-            }
-            $zip->addFile($path, basename($path));
-        }
-        $zip->close();
-
-        return new UploadedFile($zipPath, 'migration-package.zip', 'application/zip', null, true);
+        return new UploadedFile($path, 'migration-package.schf', Contract::MIME_TYPE, null, true);
     }
 }

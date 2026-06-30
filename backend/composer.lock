@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "664eefe7c4085810581f2cab14b7bbe1",
+    "content-hash": "2d024d99ca2abc45aa1c6b4e15488061",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -1461,6 +1461,42 @@
                 }
             ],
             "time": "2026-06-23T13:02:23+00:00"
+        },
+        {
+            "name": "joao-aschenbrenner/schf-sdk",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "../../schf-sdk",
+                "reference": "865a25b47298864fa0dff96bae845f81c115bac1"
+            },
+            "require": {
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "ext-pdo": "*",
+                "ext-zip": "*",
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.0"
+            },
+            "bin": [
+                "bin/schf"
+            ],
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "SCHF\\SDK\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "SCHF SDK — contratos oficiais do ecossistema SCHF (conectores, normalização, schemas)",
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
         },
         {
             "name": "laravel/framework",
@@ -10592,7 +10628,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "joao-aschenbrenner/schf-sdk": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

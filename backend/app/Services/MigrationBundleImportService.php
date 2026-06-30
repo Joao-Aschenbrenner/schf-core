@@ -11,67 +11,42 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use ZipArchive;
+use SCHF\SDK\Bundle\Contract;
+use SCHF\SDK\Bundle\Doctor;
+use SCHF\SDK\Bundle\Inspector;
+use SCHF\SDK\Bundle\Validator as BundleValidator;
+use SCHF\SDK\Bundle\Verifier;
 
 class MigrationBundleImportService
 {
-    private const REQUIRED_FILES = [
-        'manifest.json',
-        'organization.json',
-        'users.json',
-        'roles.json',
-        'permissions.json',
-        'suppliers.json',
-        'accounts.json',
-        'banks.json',
-        'categories.json',
-        'payments.json',
-        'expenses.json',
-        'report.json',
-        'checksum.sha256',
-    ];
-
     public function validate(UploadedFile $bundle): array
     {
-        return $this->withExtractedBundle($bundle, function (string $dir) {
-            return $this->validateExtractedBundle($dir);
+        return $this->withSdkBundle($bundle, function (string $dir, array $validation, array $diagnostics) {
+            return $this->validatedResponse($dir, $validation, $diagnostics);
         });
     }
 
     public function preview(UploadedFile $bundle): array
     {
-        return $this->withExtractedBundle($bundle, function (string $dir) {
-            $validation = $this->validateExtractedBundle($dir);
-            if (! $validation['valid']) {
-                return $validation;
-            }
-
-            return [
-                'valid' => true,
-                'manifest' => $validation['manifest'],
-                'summary' => $this->summarize($dir),
-                'warnings' => $validation['warnings'],
-                'errors' => [],
-            ];
+        return $this->withSdkBundle($bundle, function (string $dir, array $validation, array $diagnostics) {
+            return $this->validatedResponse($dir, $validation, $diagnostics);
         });
     }
 
     public function import(UploadedFile $bundle, ?int $operatorId = null): array
     {
-        return $this->withExtractedBundle($bundle, function (string $dir) use ($operatorId) {
-            $validation = $this->validateExtractedBundle($dir);
-            if (! $validation['valid']) {
-                return $validation;
-            }
-
-            return DB::transaction(function () use ($dir, $validation, $operatorId) {
+        return $this->withSdkBundle($bundle, function (string $dir, array $validation, array $diagnostics) use ($operatorId) {
+            return DB::transaction(function () use ($dir, $validation, $diagnostics, $operatorId) {
                 $report = [
                     'valid' => true,
                     'manifest' => $validation['manifest'],
                     'summary' => $this->summarize($dir),
+                    'doctor' => $diagnostics['doctor'],
+                    'inspection' => $diagnostics['inspection'],
+                    'signature' => $diagnostics['signature'],
                     'imported' => [],
                     'skipped' => [],
-                    'warnings' => $validation['warnings'],
+                    'warnings' => $this->warnings($validation, $diagnostics),
                     'errors' => [],
                     'operator_id' => $operatorId,
                 ];
@@ -115,152 +90,133 @@ class MigrationBundleImportService
         });
     }
 
-    private function withExtractedBundle(UploadedFile $bundle, callable $callback): array
+    private function withSdkBundle(UploadedFile $bundle, callable $callback): array
     {
-        if (! class_exists(ZipArchive::class)) {
-            return [
-                'valid' => false,
-                'errors' => ['PHP ZipArchive extension is required to import Migration Bundles.'],
-                'warnings' => [],
-            ];
-        }
-
         $workDir = storage_path('app/migration_imports/tmp/' . (string) Str::uuid());
         File::ensureDirectoryExists($workDir);
 
-        try {
-            $this->extractSafely($bundle->getRealPath(), $workDir);
+        if ($this->extension($bundle) !== Contract::EXTENSION) {
+            File::deleteDirectory($workDir);
 
-            return $callback($workDir);
+            return [
+                'valid' => false,
+                'manifest' => null,
+                'summary' => null,
+                'warnings' => [],
+                'errors' => ['Migration Bundle must use the .schf extension.'],
+            ];
+        }
+
+        $bundlePath = $workDir . DIRECTORY_SEPARATOR . 'migration-package.' . Contract::EXTENSION;
+
+        try {
+            File::copy($bundle->getRealPath(), $bundlePath);
+
+            $validator = new BundleValidator();
+            $validation = $validator->validate($bundlePath);
+            $diagnostics = $this->diagnose($bundlePath);
+
+            if (! $validation['valid']) {
+                return [
+                    'valid' => false,
+                    'manifest' => $validation['manifest'],
+                    'summary' => null,
+                    'doctor' => $diagnostics['doctor'],
+                    'inspection' => $diagnostics['inspection'],
+                    'signature' => $diagnostics['signature'],
+                    'warnings' => $this->warnings($validation, $diagnostics),
+                    'errors' => $validation['errors'],
+                ];
+            }
+
+            if ($signatureError = $this->signatureError($validator->getExtractDir(), $diagnostics['signature'])) {
+                return [
+                    'valid' => false,
+                    'manifest' => $validation['manifest'],
+                    'summary' => $this->summarize($validator->getExtractDir()),
+                    'doctor' => $diagnostics['doctor'],
+                    'inspection' => $diagnostics['inspection'],
+                    'signature' => $diagnostics['signature'],
+                    'warnings' => $this->warnings($validation, $diagnostics),
+                    'errors' => [$signatureError],
+                ];
+            }
+
+            return $callback($validator->getExtractDir(), $validation, $diagnostics);
         } catch (\Throwable $e) {
             return [
                 'valid' => false,
-                'errors' => [$e->getMessage()],
+                'manifest' => null,
+                'summary' => null,
                 'warnings' => [],
+                'errors' => [$e->getMessage()],
             ];
         } finally {
             File::deleteDirectory($workDir);
         }
     }
 
-    private function validateExtractedBundle(string $dir): array
+    private function diagnose(string $bundlePath): array
     {
-        $errors = [];
-        $warnings = [];
-
-        foreach (self::REQUIRED_FILES as $file) {
-            if (! File::exists("{$dir}/{$file}")) {
-                $errors[] = "Missing required file: {$file}";
-            }
-        }
-
-        if (! empty($errors)) {
-            return ['valid' => false, 'errors' => $errors, 'warnings' => $warnings];
-        }
-
-        $checksumErrors = $this->validateChecksums($dir);
-        $errors = [...$errors, ...$checksumErrors];
-
-        $manifest = $this->loadJson($dir, 'manifest.json');
-        foreach (['bundle_version', 'sdk_version', 'core_min_version', 'generated_at', 'generator', 'organization', 'source', 'files'] as $field) {
-            if (! array_key_exists($field, $manifest)) {
-                $errors[] = "Missing manifest field: {$field}";
-            }
-        }
-
-        if (($manifest['bundle_version'] ?? null) !== '1.0.0') {
-            $warnings[] = 'Bundle version is not 1.0.0. Import will continue only if compatible.';
-        }
+        $inspector = new Inspector();
+        $inspection = $inspector->open($bundlePath);
+        $inspector->close();
 
         return [
-            'valid' => empty($errors),
-            'manifest' => $manifest,
-            'summary' => $this->summarize($dir),
-            'errors' => $errors,
-            'warnings' => $warnings,
+            'doctor' => (new Doctor())->diagnose($bundlePath, true),
+            'inspection' => $inspection,
+            'signature' => (new Verifier())->verify($bundlePath),
         ];
     }
 
-    private function extractSafely(string $zipPath, string $targetDir): void
+    private function validatedResponse(string $dir, array $validation, array $diagnostics): array
     {
-        $zip = new ZipArchive();
-        if ($zip->open($zipPath) !== true) {
-            throw new \RuntimeException('Invalid or unreadable Migration Bundle ZIP.');
-        }
-
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $entryName = $zip->getNameIndex($i);
-            $safePath = $this->safePath($entryName);
-            $targetPath = $targetDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $safePath);
-
-            if (str_ends_with($entryName, '/')) {
-                File::ensureDirectoryExists($targetPath);
-                continue;
-            }
-
-            File::ensureDirectoryExists(dirname($targetPath));
-            $source = $zip->getStream($entryName);
-            if (! $source) {
-                throw new \RuntimeException("Unable to read ZIP entry: {$entryName}");
-            }
-
-            $destination = fopen($targetPath, 'wb');
-            stream_copy_to_stream($source, $destination);
-            fclose($source);
-            fclose($destination);
-        }
-
-        $zip->close();
+        return [
+            'valid' => true,
+            'manifest' => $validation['manifest'],
+            'summary' => $this->summarize($dir),
+            'doctor' => $diagnostics['doctor'],
+            'inspection' => $diagnostics['inspection'],
+            'signature' => $diagnostics['signature'],
+            'warnings' => $this->warnings($validation, $diagnostics),
+            'errors' => [],
+        ];
     }
 
-    private function safePath(string $path): string
+    private function warnings(array $validation, array $diagnostics): array
     {
-        $path = str_replace('\\', '/', $path);
+        $warnings = $validation['warnings'];
+        $signature = $diagnostics['signature'] ?? [];
 
-        if ($path === '' || str_starts_with($path, '/') || str_contains($path, '..') || str_contains($path, ':')) {
-            throw new \RuntimeException("Unsafe bundle path: {$path}");
+        if (($signature['verified'] ?? false) === false && ($signature['error'] ?? null) === 'Bundle is not signed (no signature.sig found)') {
+            $warnings[] = 'Bundle is unsigned; import will continue for synthetic SDK bundles.';
         }
 
-        return $path;
+        return array_values(array_unique($warnings));
     }
 
-    private function validateChecksums(string $dir): array
+    private function signatureError(string $dir, array $signature): ?string
     {
-        $errors = [];
-        $lines = preg_split('/\r\n|\r|\n/', trim(File::get("{$dir}/checksum.sha256")));
-
-        foreach ($lines as $line) {
-            if ($line === '') {
-                continue;
-            }
-
-            if (! preg_match('/^([A-Fa-f0-9]{64})\s+(.+)$/', trim($line), $matches)) {
-                $errors[] = "Invalid checksum line: {$line}";
-                continue;
-            }
-
-            $expected = strtoupper($matches[1]);
-            $relative = $this->safePath(trim($matches[2]));
-            $path = "{$dir}/{$relative}";
-
-            if (! File::exists($path)) {
-                $errors[] = "Checksum references missing file: {$relative}";
-                continue;
-            }
-
-            $actual = strtoupper(hash_file('sha256', $path));
-            if ($actual !== $expected) {
-                $errors[] = "Checksum mismatch: {$relative}";
-            }
+        if (! File::exists("{$dir}/signature.sig")) {
+            return null;
         }
 
-        return $errors;
+        if (($signature['verified'] ?? false) === true) {
+            return null;
+        }
+
+        return 'Bundle signature could not be verified: ' . ($signature['error'] ?? 'unknown verification error');
+    }
+
+    private function extension(UploadedFile $bundle): string
+    {
+        return strtolower($bundle->getClientOriginalExtension());
     }
 
     private function summarize(string $dir): array
     {
         $summary = [];
-        foreach (self::REQUIRED_FILES as $file) {
+        foreach (Contract::REQUIRED_FILES as $file) {
             if (! str_ends_with($file, '.json') || ! File::exists("{$dir}/{$file}")) {
                 continue;
             }
@@ -294,7 +250,7 @@ class MigrationBundleImportService
         $map = [];
         foreach ($records as $record) {
             $supplier = Supplier::updateOrCreate(
-                ['legacy_id' => $record['external_id']],
+                ['legacy_id' => $this->legacyId($record['external_id'])],
                 [
                     'name' => $record['name'],
                     'is_active' => $record['active'] ?? true,
@@ -312,7 +268,7 @@ class MigrationBundleImportService
         $map = [];
         foreach ($records as $record) {
             $category = ExpenseCategory::updateOrCreate(
-                ['legacy_id' => $record['external_id']],
+                ['legacy_id' => $this->legacyId($record['external_id'])],
                 [
                     'name' => $record['name'],
                     'code' => $record['external_id'],
@@ -343,11 +299,11 @@ class MigrationBundleImportService
         foreach ($records as $record) {
             $bank = $bankMap[$record['bank_external_id'] ?? ''] ?? [];
             $account = BankAccount::updateOrCreate(
-                ['legacy_id' => $record['external_id']],
+                ['legacy_id' => $this->legacyId($record['external_id'])],
                 [
-                    'bank_code' => $bank['code'] ?? null,
-                    'bank_name' => $bank['name'] ?? ($record['name'] ?? 'Imported account'),
-                    'agency' => data_get($record, 'metadata.agency'),
+                    'bank_code' => $bank['code'] ?? ($record['bank_code'] ?? '000'),
+                    'bank_name' => $bank['name'] ?? ($record['bank_name'] ?? $record['name'] ?? 'Imported account'),
+                    'agency' => data_get($record, 'metadata.agency', '0000'),
                     'account' => data_get($record, 'metadata.account_number', $record['external_id']),
                     'type' => $this->bankAccountType($record['type'] ?? 'other'),
                     'holder_name' => data_get($record, 'metadata.holder_name'),
@@ -375,7 +331,7 @@ class MigrationBundleImportService
             }
 
             Payable::updateOrCreate(
-                ['legacy_id' => $record['external_id']],
+                ['legacy_id' => $this->legacyId($record['external_id'])],
                 [
                     'description' => $record['description'] ?? 'Imported payable',
                     'supplier_id' => $supplierMap[$record['supplier_external_id'] ?? ''] ?? null,
@@ -404,7 +360,7 @@ class MigrationBundleImportService
 
         foreach ($records as $record) {
             Payable::updateOrCreate(
-                ['legacy_id' => $record['external_id']],
+                ['legacy_id' => $this->legacyId($record['external_id'])],
                 [
                     'description' => $record['description'] ?? 'Imported expense',
                     'supplier_id' => $supplierMap[$record['supplier_external_id'] ?? ''] ?? null,
@@ -424,6 +380,11 @@ class MigrationBundleImportService
         }
 
         return compact('imported', 'warnings');
+    }
+
+    private function legacyId(string $externalId): int
+    {
+        return (int) hexdec(substr(hash('sha256', $externalId), 0, 15));
     }
 
     private function payableStatus(string $status): string
