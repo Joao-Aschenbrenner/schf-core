@@ -7,15 +7,18 @@ use App\Models\ExpenseCategory;
 use App\Models\Organization;
 use App\Models\Payable;
 use App\Models\Supplier;
+use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use SCHF\SDK\Bundle\Contract;
 use SCHF\SDK\Bundle\Doctor;
 use SCHF\SDK\Bundle\Inspector;
 use SCHF\SDK\Bundle\Validator as BundleValidator;
 use SCHF\SDK\Bundle\Verifier;
+use Spatie\Permission\Models\Role;
 
 class MigrationBundleImportService
 {
@@ -84,6 +87,10 @@ class MigrationBundleImportService
                 );
                 $report['imported']['expenses'] = $expenseResult['imported'];
                 $report['warnings'] = [...$report['warnings'], ...$expenseResult['warnings']];
+
+                $userResult = $this->importUsers($this->loadJson($dir, 'users.json'), $organization);
+                $report['imported']['users'] = $userResult['imported'];
+                $report['warnings'] = [...$report['warnings'], ...$userResult['warnings']];
 
                 return $report;
             });
@@ -376,6 +383,55 @@ class MigrationBundleImportService
                     'created_by' => $operatorId,
                 ]
             );
+            $imported++;
+        }
+
+        return compact('imported', 'warnings');
+    }
+
+    private function importUsers(array $records, Organization $organization): array
+    {
+        $imported = 0;
+        $warnings = [];
+
+        foreach ($records as $record) {
+            $user = User::updateOrCreate(
+                ['email' => $record['email']],
+                [
+                    'name' => $record['name'],
+                    'organization_id' => $organization->id,
+                    'is_active' => $record['active'] ?? true,
+                    'is_master' => false,
+                    'is_system_admin' => false,
+                    'password' => Hash::make(bin2hex(random_bytes(16))),
+                ]
+            );
+
+            $roles = $record['roles'] ?? [];
+            if (!empty($roles)) {
+                try {
+                    $existingRoles = $user->getRoleNames()->toArray();
+                    $rolesToSync = array_diff($roles, $existingRoles);
+                    if (!empty($rolesToSync)) {
+                        foreach ($rolesToSync as $roleName) {
+                            $roleModel = Role::query()
+                                ->where('name', $roleName)
+                                ->where('guard_name', 'sanctum')
+                                ->first();
+
+                            if (! $roleModel) {
+                                $warnings[] = "Role '{$roleName}' does not exist for user {$record['email']}; role assignment skipped.";
+                                continue;
+                            }
+
+                            $user->assignRole($roleModel);
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    $warnings[] = "Role assignment failed for user {$record['email']}: {$e->getMessage()}";
+                }
+            }
+
             $imported++;
         }
 
